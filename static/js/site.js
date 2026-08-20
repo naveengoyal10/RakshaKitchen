@@ -88,7 +88,7 @@ function updateWhatsAppLink() {
 function syncMenuPricing() {
   const pricingUrl = document.body.dataset.menuPricingUrl;
   if (!pricingUrl || !document.querySelector('.menu-item-action')) return;
-  fetch(`${pricingUrl}?v=unit-pricing-3`, {cache: 'no-store'})
+  fetch(`${pricingUrl}?v=unit-pricing-4`, {cache: 'no-store'})
     .then((response) => response.ok ? response.json() : {})
     .then((pricing) => {
       const itemPricing = pricing.items || {};
@@ -99,8 +99,9 @@ function syncMenuPricing() {
         const item = itemPricing[itemId];
         const price = action.querySelector('strong');
         if (!item || !price) return;
-        const unitName = item.unit === 'gram' ? 'grams' : item.unit === 'plate' ? 'plates' : 'pieces';
-        price.dataset.mainPrice = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
+        const unitName = item.unit === 'gram' ? 'grams' : item.unit === 'plate' ? 'plate' : 'pieces';
+        const unitText = item.unit === 'plate' ? unitName : `${item.unit_quantity} ${unitName}`;
+        price.dataset.mainPrice = `₹${item.price} per ${unitText}`;
         price.classList.add('unit-price-display');
         updateSelectedVariantPrice(card, price.dataset.mainPrice);
           const baseOption = card.querySelector('.food-variant option[value=""]');
@@ -108,9 +109,10 @@ function syncMenuPricing() {
         card.querySelectorAll('.food-variant option[value]').forEach((option) => {
           const variant = variantPricing[option.value];
           if (!variant) return;
-          const variantUnit = variant.unit === 'gram' ? 'grams' : variant.unit === 'plate' ? 'plates' : 'pieces';
+          const variantUnit = variant.unit === 'gram' ? 'grams' : variant.unit === 'plate' ? 'plate' : 'pieces';
+          const variantUnitText = variant.unit === 'plate' ? variantUnit : `${variant.unit_quantity} ${variantUnit}`;
           const variantName = option.textContent.split(' · ')[0];
-          option.dataset.displayPrice = `₹${variant.price} per ${variant.unit_quantity} ${variantUnit}`;
+          option.dataset.displayPrice = `₹${variant.price} per ${variantUnitText}`;
           option.textContent = `${variantName} · ${option.dataset.displayPrice}`;
         });
       });
