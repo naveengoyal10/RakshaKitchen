@@ -102,6 +102,8 @@ function syncMenuPricing() {
         price.dataset.mainPrice = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
         price.classList.add('unit-price-display');
         updateSelectedVariantPrice(card, price.dataset.mainPrice);
+          const baseOption = card.querySelector('.food-variant option[value=""]');
+          if (baseOption) baseOption.textContent = `${item.base_option_name || 'Standard'} · ${price.dataset.mainPrice}`;
         card.querySelectorAll('.food-variant option[value]').forEach((option) => {
           const variant = variantPricing[option.value];
           if (!variant) return;

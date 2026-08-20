@@ -29,6 +29,7 @@ class FoodItem(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="food_items")
     description = models.TextField()
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    base_option_name = models.CharField(max_length=80, default="Standard", help_text="Name shown for the main item option")
     unit_quantity = models.PositiveIntegerField(default=1, help_text="Number of pieces or grams included at this price")
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="piece")
     image = models.ImageField(upload_to="menu/", blank=True)
