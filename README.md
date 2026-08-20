@@ -35,6 +35,8 @@ Configure these Vercel project environment variables for Production before redep
 - `RAKSHA_WHATSAPP`: `9305126262`
 - `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: set all three to provision the Django admin account during the build
 
+After adding or changing these variables, create a new deployment. The build log must contain `Admin user created` or `Admin user updated`; changing an environment variable does not modify an already completed deployment.
+
 The Vercel build runs `collectstatic` and applies migrations. Do not use the local SQLite database for production because Vercel's filesystem is temporary.
 
 ## Production security

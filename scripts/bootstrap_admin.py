@@ -4,9 +4,9 @@ import django
 
 
 def main():
-    username = os.getenv("ADMIN_USERNAME", "").strip()
-    email = os.getenv("ADMIN_EMAIL", "").strip()
-    password = os.getenv("ADMIN_PASSWORD", "")
+    username = os.getenv("ADMIN_USERNAME", os.getenv("DJANGO_SUPERUSER_USERNAME", "")).strip()
+    email = os.getenv("ADMIN_EMAIL", os.getenv("DJANGO_SUPERUSER_EMAIL", "")).strip()
+    password = os.getenv("ADMIN_PASSWORD", os.getenv("DJANGO_SUPERUSER_PASSWORD", ""))
     if not all((username, email, password)):
         print("Admin bootstrap skipped: set ADMIN_USERNAME, ADMIN_EMAIL, and ADMIN_PASSWORD to enable it.")
         return
