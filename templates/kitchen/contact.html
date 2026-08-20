@@ -1,0 +1,6 @@
+{% extends "kitchen/base.html" %}
+{% block title %}Contact | Raksha Kitchen{% endblock %}
+{% block meta_description %}Contact Raksha Kitchen for food enquiries, custom menus, bulk orders, delivery, pickup, and celebration catering.{% endblock %}
+{% block content %}
+<section class="contact-page"><div><p class="eyebrow">Come say hello</p><h1>Let's make your<br><em>next meal special.</em></h1><p>Questions, custom menus, or a last-minute craving? Send an enquiry or reach us directly.</p></div><div class="contact-card"><p class="eyebrow">Reach Raksha Kitchen</p><a href="tel:+919876543210">+91 98765 43210</a><a href="mailto:hello@rakshakitchen.in">hello@rakshakitchen.in</a><a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noreferrer">WhatsApp us <span>↗</span></a><a class="button button-dark" href="{% url 'kitchen:order' %}">Send an enquiry <span>↗</span></a></div></section>
+{% endblock %}

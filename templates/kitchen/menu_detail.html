@@ -1,0 +1,16 @@
+{% extends "kitchen/base.html" %}
+{% block title %}{{ item.name }} | Raksha Kitchen{% endblock %}
+{% block meta_description %}{{ item.description|truncatechars:155 }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block structured_data %}<script type="application/ld+json">{
+	"@context": "https://schema.org",
+	"@type": "Product",
+	"name": "{{ item.name|escapejs }}",
+	"description": "{{ item.description|escapejs }}",
+	"category": "{{ item.category.name|escapejs }}",
+	"url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+	"offers": {"@type": "Offer", "priceCurrency": "INR", "price": "{{ item.price }}", "availability": "https://schema.org/InStock"}
+}</script>{% endblock %}
+{% block content %}
+<section class="item-detail"><div class="item-detail-art">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}<span>{{ item.category.name }}</span>{% endif %}</div><div class="item-detail-copy"><p class="eyebrow">{{ item.category.name }}{% if item.dietary_type == 'vegetarian' %} · Vegetarian{% elif item.dietary_type == 'non_vegetarian' %} · Non-vegetarian{% endif %}{% if item.is_jain_available %} · Jain available{% endif %}</p><h1>{{ item.name }}</h1><p class="item-detail-description">{{ item.description }}</p><div class="item-price">₹{{ item.price }}</div>{% if item.variants.all %}<div class="detail-variants"><p class="eyebrow">Available sizes</p>{% for variant in item.variants.all %}{% if variant.is_available %}<span>{{ variant.name }} · ₹{{ variant.price }}</span>{% endif %}{% endfor %}</div>{% endif %}<button class="button button-dark add-item" type="button" data-item-name="{{ item.name|escapejs }}" data-item-price="{{ item.price }}">Add to enquiry list <span>+</span></button><a class="back-link" href="{% url 'kitchen:menu' %}">← Back to menu</a></div></section>
+{% endblock %}

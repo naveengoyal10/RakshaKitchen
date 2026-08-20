@@ -1,0 +1,12 @@
+{% load static %}
+<footer class="site-footer">
+  <div class="footer-brand"><img class="footer-logo" src="{% static 'images/Logo.png' %}" alt="Raksha Kitchen"><strong>{{ site_settings.business_name|default:'Raksha Kitchen' }}</strong></div>
+  <p class="footer-tagline">{{ site_settings.tagline|default:'Thoughtful food, made close to home.' }}</p>
+  <div class="footer-contact" aria-label="Contact Raksha Kitchen">
+    <a href="tel:{{ site_settings.phone|default:'+919876543210' }}">{{ site_settings.phone|default:'+91 98765 43210' }}</a>
+    <a href="mailto:{{ site_settings.email|default:'hello@rakshakitchen.in' }}">{{ site_settings.email|default:'hello@rakshakitchen.in' }}</a>
+    <a class="whatsapp-link" href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noreferrer">WhatsApp us <span>↗</span></a>
+  </div>
+  <p class="footer-copyright">© {% now "Y" %} {{ site_settings.business_name|default:'Raksha Kitchen' }}</p>
+</footer>
+<a class="whatsapp-fab" href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noreferrer" aria-label="Chat with Raksha Kitchen on WhatsApp">WhatsApp <span>↗</span></a>

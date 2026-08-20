@@ -1,0 +1,1 @@
+.order-form label:has(input[type="hidden"]){display:none}.order-item-list{display:grid;gap:10px}.order-item-row{display:flex;justify-content:space-between;gap:16px}.order-total-emphasis{font-family:var(--serif);font-size:1.4rem}

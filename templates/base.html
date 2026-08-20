@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block meta_description %}Raksha Kitchen serves fresh, home-style Indian food, snacks, meals, and bulk orders made for sharing.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="{{ site_settings.business_name|default:'Raksha Kitchen' }}">
+  <meta property="og:title" content="{% block og_title %}{{ site_settings.business_name|default:'Raksha Kitchen' }} | Made for your table{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Fresh, home-style Indian food, snacks, meals, and bulk orders made for sharing.{% endblock %}">
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <title>{% block title %}{{ site_settings.business_name|default:'Raksha Kitchen' }} | Made for your table{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/site.css' %}">
+  <link rel="stylesheet" href="{% static 'css/ordering.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/design.css' %}">
+  <link rel="stylesheet" href="{% static 'css/premium-home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/food-card.css' %}">
+  <link rel="stylesheet" href="{% static 'css/order-fixes.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bulk-inquiry.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bulk-page-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bulk-callout.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bulk-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/navbar-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/navbar-logo-size.css' %}">
+  <link rel="stylesheet" href="{% static 'css/category-images.css' %}">
+  <link rel="stylesheet" href="{% static 'css/category-image-fit.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer-alignment.css' %}">
+  <link rel="stylesheet" href="{% static 'css/premium-order.css' %}">
+  <link rel="stylesheet" href="{% static 'css/contact-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/about-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/menu-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'css/hero-image.css' %}">
+  {% block extra_meta %}{% endblock %}
+</head>
+<body data-menu-url="{% url 'kitchen:menu' %}" data-whatsapp-number="{{ whatsapp_number }}">
+  {% include "includes/navbar.html" %}
+  {% include "includes/messages.html" %}
+  <main>{% block content %}{% endblock %}</main>
+  {% include "includes/footer.html" %}
+  {% block structured_data %}<script type="application/ld+json">{
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    "name": "{{ site_settings.business_name|default:'Raksha Kitchen'|escapejs }}",
+    "description": "{{ site_settings.tagline|default:'Fresh, home-style Indian food made for sharing.'|escapejs }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+  }</script>{% endblock %}
+  <script src="{% static 'js/site.js' %}"></script>
+</body>
+</html>

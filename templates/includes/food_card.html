@@ -1,0 +1,13 @@
+<article class="food-card" data-food-card>
+  <a class="food-card-image-link" href="{% url 'kitchen:menu_detail' item.slug %}" aria-label="View {{ item.name }} details">
+    <div class="food-art art-{{ card_index|default:1 }}">
+      {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+      <span>{{ item.category.name }}</span>
+    </div>
+  </a>
+  <div class="food-info">
+    <div class="food-card-heading"><h3><a href="{% url 'kitchen:menu_detail' item.slug %}">{{ item.name }}</a></h3><span class="food-card-arrow" aria-hidden="true">↗</span></div>
+    <p>{{ item.description }}</p>
+    <div class="food-meta"><strong>₹{{ item.price }}</strong>{% if item.variants.all %}<select class="food-variant" aria-label="Choose a size for {{ item.name }}"><option value="">Standard</option>{% for variant in item.variants.all %}<option value="{{ variant.id }}" data-variant-price="{{ variant.price }}">{{ variant.name }} · ₹{{ variant.price }}</option>{% endfor %}</select>{% endif %}<button class="add-item" type="button" data-food-item-id="{{ item.id }}" data-item-name="{{ item.name|escapejs }}" data-item-price="{{ item.price }}">Add to list <span>+</span></button></div>
+  </div>
+</article>

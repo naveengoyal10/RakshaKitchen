@@ -1,0 +1,55 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block meta_description %}Raksha Kitchen serves fresh, home-style Indian food, snacks, meals, and bulk orders made for sharing.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="{{ site_settings.business_name|default:'Raksha Kitchen' }}">
+  <meta property="og:title" content="{% block og_title %}{{ site_settings.business_name|default:'Raksha Kitchen' }} | Made for your table{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Fresh, home-style Indian food, snacks, meals, and bulk orders made for sharing.{% endblock %}">
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  {% block extra_meta %}{% endblock %}
+  <title>{% block title %}{{ site_settings.business_name|default:'Raksha Kitchen' }} | Made for your table{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/site.css' %}">
+  <link rel="stylesheet" href="{% static 'css/ordering.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/design.css' %}">
+  <link rel="stylesheet" href="{% static 'css/premium-home.css' %}">
+</head>
+<body data-menu-url="{% url 'kitchen:menu' %}" data-whatsapp-number="{{ whatsapp_number }}">
+  <header class="site-header">
+    <a class="brand" href="{% url 'kitchen:home' %}"><span>RK</span> Raksha Kitchen</a>
+    <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="{% url 'kitchen:home' %}">Home</a>
+      <a href="{% url 'kitchen:menu' %}">Our menu</a>
+      <a href="{% url 'kitchen:about' %}">About</a>
+      <a href="{% url 'kitchen:contact' %}">Contact</a>
+      <a href="{% url 'kitchen:bulk_orders' %}">Bulk orders</a>
+      <a href="{% url 'kitchen:order' %}" class="nav-cta">Plan an order <span class="basket-count" aria-label="items in enquiry list">0</span></a>
+    </nav>
+  </header>
+  {% if messages %}<div class="messages">{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}</div>{% endif %}
+  <main>{% block content %}{% endblock %}</main>
+  <footer class="site-footer"><div><span class="brand-mark">RK</span><strong>Raksha Kitchen</strong></div><p>Thoughtful food, made close to home.</p><div class="footer-contact"><a href="tel:+919876543210">+91 98765 43210</a><a href="mailto:hello@rakshakitchen.in">hello@rakshakitchen.in</a><a class="whatsapp-link" href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noreferrer">WhatsApp us <span>↗</span></a></div><p>© {% now "Y" %} Raksha Kitchen</p></footer>
+  <a class="whatsapp-fab" href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noreferrer" aria-label="Chat with Raksha Kitchen on WhatsApp">WhatsApp <span>↗</span></a>
+  {% block structured_data %}<script type="application/ld+json">{
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    "name": "{{ site_settings.business_name|default:'Raksha Kitchen'|escapejs }}",
+    "description": "{{ site_settings.tagline|default:'Fresh, home-style Indian food made for sharing.'|escapejs }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"{% if site_settings.phone %},
+    "telephone": "{{ site_settings.phone|escapejs }}"{% endif %}{% if site_settings.email %},
+    "email": "{{ site_settings.email|escapejs }}"{% endif %}{% if site_settings.address %},
+    "address": {"@type": "PostalAddress", "streetAddress": "{{ site_settings.address|escapejs }}"}{% endif %}
+  }</script>{% endblock %}
+  <script src="{% static 'js/site.js' %}"></script>
+</body>
+</html>

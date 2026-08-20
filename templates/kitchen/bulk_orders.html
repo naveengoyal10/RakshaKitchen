@@ -1,0 +1,7 @@
+{% extends "kitchen/base.html" %}
+{% block title %}Bulk Orders | Raksha Kitchen{% endblock %}
+{% block meta_description %}Plan generous Indian food catering for birthdays, office lunches, festive gatherings, and party orders with Raksha Kitchen.{% endblock %}
+{% block content %}
+<section class="page-intro standalone-intro"><p class="eyebrow">For the big moments</p><h1>More people,<br><em>more to celebrate.</em></h1><p>From office lunches and birthday tables to festive gatherings, we can help you plan a generous menu that fits the occasion.</p><a class="button button-dark" href="{% url 'kitchen:order' %}">Start a bulk enquiry <span>↗</span></a></section>
+<section class="bulk-planning"><div><p class="eyebrow">How it works</p><h2>A simple plan<br><em>for a full table.</em></h2></div><div class="bulk-steps"><div><b>01</b><h3>Tell us the details</h3><p>Share your date, guest count, preferences, and the kind of gathering you are planning.</p></div><div><b>02</b><h3>Shape the menu</h3><p>We will suggest dishes, portions, and options that work well together.</p></div><div><b>03</b><h3>Enjoy the gathering</h3><p>We prepare the food so you can stay present with the people who matter.</p></div></div></section>
+{% endblock %}
