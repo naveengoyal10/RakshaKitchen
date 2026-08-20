@@ -15,6 +15,10 @@
   white-space: nowrap;
 }
 
+.premium-menu-item .variant-list {
+  display: none;
+}
+
 .order-summary .clear-list {
   background: transparent;
   border: 1px solid #e8b65f;
