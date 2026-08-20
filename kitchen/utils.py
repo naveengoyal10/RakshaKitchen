@@ -4,7 +4,7 @@ from urllib.parse import quote
 from .models import WebsiteSettings
 
 
-DEFAULT_WHATSAPP_NUMBER = "9305126262"
+DEFAULT_WHATSAPP_NUMBER = "919305126262"
 
 
 def _site_settings():
