@@ -85,7 +85,15 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
+DATABASE_URL = (
+    os.getenv("DATABASE_URL", "").strip()
+    or os.getenv("POSTGRES_URL", "").strip()
+    or os.getenv("POSTGRES_URL_NON_POOLING", "").strip()
+    or ("" if os.getenv("VERCEL") else "sqlite:///db.sqlite3")
+)
+if os.getenv("VERCEL") and not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL or POSTGRES_URL must be configured on Vercel")
+
 parsed_database = urlparse(DATABASE_URL)
 if parsed_database.scheme.startswith("postgres"):
     DATABASES = {"default": {

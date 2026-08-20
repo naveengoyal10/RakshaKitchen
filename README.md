@@ -30,7 +30,7 @@ Configure these Vercel project environment variables for Production before redep
 - `DJANGO_ALLOWED_HOSTS`: your custom domain, if you use one
 - `DJANGO_CSRF_TRUSTED_ORIGINS`: your custom domain as an HTTPS URL, if you use one
 - `RAKSHA_SITE_URL`: your deployed site URL, including `https://`
-- `DATABASE_URL`: a hosted PostgreSQL connection URL
+- `DATABASE_URL` or `POSTGRES_URL`: a hosted PostgreSQL connection URL (required on Vercel)
 - `RAKSHA_PHONE`: `+91 93051 26262`
 - `RAKSHA_EMAIL`: `raksha.shady@gmail.com`
 - `RAKSHA_WHATSAPP`: `9305126262`
