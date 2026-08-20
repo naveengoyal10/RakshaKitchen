@@ -35,10 +35,52 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function getCardItemKey(card) {
+  const addButton = card.querySelector('.add-item');
+  const variantSelect = card.querySelector('.food-variant');
+  return `${addButton.dataset.itemName}:${variantSelect?.value || 'standard'}`;
+}
+
+function getCardItem(card) {
+  return basket.find((item) => item.key === getCardItemKey(card));
+}
+
+function syncCardQuantities() {
+  document.querySelectorAll('[data-food-card]').forEach((card) => {
+    const addButton = card.querySelector('.add-item');
+    if (!addButton) return;
+    let controls = card.querySelector('.dish-quantity-controls');
+    if (!controls) {
+      controls = document.createElement('div');
+      controls.className = 'dish-quantity-controls';
+      controls.innerHTML = '<button type="button" data-card-decrement aria-label="Decrease quantity">−</button><span class="dish-quantity" aria-live="polite">0</span><button type="button" data-card-increment aria-label="Increase quantity">+</button>';
+      addButton.before(controls);
+    }
+    const item = getCardItem(card);
+    controls.querySelector('.dish-quantity').textContent = item?.quantity || '0';
+    controls.classList.toggle('has-items', Boolean(item));
+  });
+}
+
+function addCardItem(card) {
+  const button = card.querySelector('.add-item');
+  const variantSelect = card.querySelector('.food-variant');
+  const selectedVariant = variantSelect?.selectedOptions[0];
+  const variantId = variantSelect?.value ? Number(variantSelect.value) : null;
+  const variantName = variantSelect?.value ? selectedVariant.textContent.split(' · ')[0] : '';
+  const itemKey = getCardItemKey(card);
+  const existing = basket.find((item) => item.key === itemKey);
+  if (existing) existing.quantity += 1;
+  else basket.push({key: itemKey, food_item_id: Number(button.dataset.foodItemId), variant_id: variantId, variant_name: variantName, name: button.dataset.itemName, price: selectedVariant?.dataset.variantPrice || button.dataset.itemPrice, quantity: 1});
+  saveBasket();
+  renderBasket();
+}
+
 function renderBasket() {
   document.querySelectorAll('.basket-count').forEach((count) => {
     count.textContent = basket.reduce((total, item) => total + item.quantity, 0);
   });
+  syncCardQuantities();
 
   const container = document.querySelector('.basket-items');
   if (!container) return;
@@ -55,22 +97,28 @@ function renderBasket() {
 
 document.querySelectorAll('.add-item').forEach((button) => {
   button.addEventListener('click', () => {
-    const variantSelect = button.closest('[data-food-card]')?.querySelector('.food-variant');
-    const selectedVariant = variantSelect?.selectedOptions[0];
-    const variantId = variantSelect?.value ? Number(variantSelect.value) : null;
-    const variantName = variantSelect?.value ? selectedVariant.textContent.split(' · ')[0] : '';
-    const itemKey = `${button.dataset.itemName}:${variantId || 'standard'}`;
-    const existing = basket.find((item) => item.key === itemKey);
-    if (existing) existing.quantity += 1;
-    else basket.push({key: itemKey, food_item_id: Number(button.dataset.foodItemId), variant_id: variantId, variant_name: variantName, name: button.dataset.itemName, price: selectedVariant?.dataset.variantPrice || button.dataset.itemPrice, quantity: 1});
-    saveBasket();
-    renderBasket();
+    addCardItem(button.closest('[data-food-card]'));
     button.innerHTML = 'Added <span>✓</span>';
     window.setTimeout(() => { button.innerHTML = 'Add <span>+</span>'; }, 1200);
   });
 });
 
 document.addEventListener('click', (event) => {
+  const cardQuantityButton = event.target.closest('[data-card-increment], [data-card-decrement]');
+  if (cardQuantityButton) {
+    const card = cardQuantityButton.closest('[data-food-card]');
+    if (cardQuantityButton.hasAttribute('data-card-increment')) addCardItem(card);
+    else {
+      const item = getCardItem(card);
+      if (item) {
+        item.quantity -= 1;
+        if (item.quantity <= 0) basket = basket.filter((basketItem) => basketItem.key !== item.key);
+        saveBasket();
+        renderBasket();
+      }
+    }
+    return;
+  }
   const quantityButton = event.target.closest('[data-increment-item], [data-decrement-item]');
   if (quantityButton) {
     const itemName = decodeURIComponent(quantityButton.dataset.incrementItem || quantityButton.dataset.decrementItem);
@@ -90,6 +138,10 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  if (event.target.closest('.food-variant')) {
+    syncCardQuantities();
+    return;
+  }
   const quantityInput = event.target.closest('[data-quantity-item]');
   if (!quantityInput) return;
   const item = basket.find((basketItem) => basketItem.name === decodeURIComponent(quantityInput.dataset.quantityItem));
