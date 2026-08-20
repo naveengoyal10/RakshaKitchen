@@ -87,16 +87,17 @@ function updateWhatsAppLink() {
 
 function syncMenuPricing() {
   const pricingUrl = document.body.dataset.menuPricingUrl;
-  if (!pricingUrl || !document.querySelector('.premium-menu-item')) return;
+  if (!pricingUrl || !document.querySelector('.menu-item-action')) return;
   fetch(pricingUrl)
     .then((response) => response.ok ? response.json() : {})
     .then((pricing) => {
       const itemPricing = pricing.items || {};
       const variantPricing = pricing.variants || {};
-      document.querySelectorAll('.premium-menu-item').forEach((card) => {
+      document.querySelectorAll('.menu-item-action').forEach((action) => {
+        const card = action.closest('[data-food-card]');
         const itemId = card.querySelector('.add-item')?.dataset.foodItemId;
         const item = itemPricing[itemId];
-        const price = card.querySelector('.menu-item-action strong');
+        const price = action.querySelector('strong');
         if (!item || !price) return;
         const unitName = item.unit === 'gram' ? 'grams' : 'pieces';
         price.dataset.mainPrice = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
