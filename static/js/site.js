@@ -99,7 +99,7 @@ function syncMenuPricing() {
         const item = itemPricing[itemId];
         const price = action.querySelector('strong');
         if (!item || !price) return;
-        const unitName = item.unit === 'gram' ? 'grams' : 'pieces';
+        const unitName = item.unit === 'gram' ? 'grams' : item.unit === 'plate' ? 'plates' : 'pieces';
         price.dataset.mainPrice = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
         price.classList.add('unit-price-display');
         updateSelectedVariantPrice(card, price.dataset.mainPrice);
@@ -108,7 +108,7 @@ function syncMenuPricing() {
         card.querySelectorAll('.food-variant option[value]').forEach((option) => {
           const variant = variantPricing[option.value];
           if (!variant) return;
-          const variantUnit = variant.unit === 'gram' ? 'grams' : 'pieces';
+          const variantUnit = variant.unit === 'gram' ? 'grams' : variant.unit === 'plate' ? 'plates' : 'pieces';
           const variantName = option.textContent.split(' · ')[0];
           option.dataset.displayPrice = `₹${variant.price} per ${variant.unit_quantity} ${variantUnit}`;
           option.textContent = `${variantName} · ${option.dataset.displayPrice}`;

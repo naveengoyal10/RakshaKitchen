@@ -22,7 +22,7 @@ class Category(models.Model):
         return self.name
 
 class FoodItem(models.Model):
-    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams")]
+    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams"), ("plate", "Plate")]
 
     name = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
@@ -69,7 +69,7 @@ class FoodItem(models.Model):
 
 
 class FoodVariant(models.Model):
-    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams")]
+    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams"), ("plate", "Plate")]
 
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name="variants")
     name = models.CharField(max_length=80, help_text="For example: Half, Full, 250 g, or 1 kg")
