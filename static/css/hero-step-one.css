@@ -107,3 +107,75 @@
     min-height: 360px;
   }
 }
+
+/* Keep the homepage popular cards aligned without changing other card grids. */
+.featured .food-grid {
+  align-items: stretch;
+}
+
+.featured .food-card {
+  height: 100%;
+}
+
+.featured .food-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.featured .food-info > p {
+  flex: 1;
+}
+
+.featured .food-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.featured .food-meta strong {
+  background: var(--ink);
+  border-radius: 999px;
+  color: var(--paper);
+  flex: 0 1 auto;
+  font-family: var(--sans);
+  font-size: .78rem;
+  line-height: 1.25;
+  padding: 8px 12px;
+  white-space: normal;
+}
+
+.featured .food-variant {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  flex: 1 1 140px;
+  font: 600 .74rem var(--sans);
+  min-width: 0;
+  padding: 9px 11px;
+}
+
+@media (max-width: 760px) {
+  .featured .food-card {
+    min-height: 0;
+  }
+
+  .featured .food-art {
+    height: 210px;
+  }
+
+  .featured .food-meta {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .featured .food-meta strong,
+  .featured .food-variant {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
