@@ -128,6 +128,12 @@ function updateSelectedVariantPrice(card, fallbackPrice) {
   price.textContent = selected?.value ? selected.dataset.displayPrice || selected.dataset.variantPrice : fallbackPrice || price.dataset.mainPrice || price.textContent;
 }
 
+function normalizePlateLabels() {
+  document.querySelectorAll('.menu-item-action strong, .food-meta strong, .food-variant option').forEach((element) => {
+    element.textContent = element.textContent.replace(/per\s+1\s+plate(s)?/gi, 'per plate');
+  });
+}
+
 function renderBasket() {
   document.querySelectorAll('.basket-count').forEach((count) => {
     count.textContent = basket.reduce((total, item) => total + item.quantity, 0);
@@ -217,3 +223,4 @@ document.querySelector('.whatsapp-order')?.addEventListener('click', updateWhats
 
 renderBasket();
 syncMenuPricing();
+normalizePlateLabels();
