@@ -76,11 +76,21 @@ function addCardItem(card) {
   renderBasket();
 }
 
+function updateWhatsAppLink() {
+  document.querySelectorAll('.whatsapp-order').forEach((link) => {
+    const message = basket.length
+      ? `Hello Raksha Kitchen, I would like to enquire about:\n${basket.map((item) => `${item.name} x ${item.quantity}`).join('\n')}`
+      : 'Hello Raksha Kitchen, I would like to enquire about placing an order.';
+    link.href = `https://wa.me/${document.body.dataset.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  });
+}
+
 function renderBasket() {
   document.querySelectorAll('.basket-count').forEach((count) => {
     count.textContent = basket.reduce((total, item) => total + item.quantity, 0);
   });
   syncCardQuantities();
+  updateWhatsAppLink();
 
   const container = document.querySelector('.basket-items');
   if (!container) return;
@@ -158,10 +168,6 @@ document.querySelector('.clear-list')?.addEventListener('click', () => {
   renderBasket();
 });
 
-document.querySelector('[data-order-form]')?.addEventListener('submit', (event) => {
-  if (!basket.length) return;
-  const message = `Hello Raksha Kitchen, I would like to enquire about:\n${basket.map((item) => `${item.name} x ${item.quantity}`).join('\n')}`;
-  document.querySelector('.whatsapp-order').href = `https://wa.me/${document.body.dataset.whatsappNumber}?text=${encodeURIComponent(message)}`;
-});
+document.querySelector('.whatsapp-order')?.addEventListener('click', updateWhatsAppLink);
 
 renderBasket();
