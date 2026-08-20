@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-only")
+configured_secret_key = os.getenv("DJANGO_SECRET_KEY", "").strip()
+SECRET_KEY = configured_secret_key or "django-insecure-development-only"
 DEBUG = os.getenv("DJANGO_DEBUG", "False" if os.getenv("VERCEL") else "True").lower() == "true"
 
 def _csv_env(name, default=""):
@@ -25,7 +26,7 @@ if vercel_host:
     if vercel_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(vercel_origin)
 
-if not DEBUG and SECRET_KEY == "django-insecure-development-only":
+if not DEBUG and not configured_secret_key:
     raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false")
 
 INSTALLED_APPS = [
