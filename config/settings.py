@@ -1,7 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from dotenv import load_dotenv
 
@@ -85,10 +85,18 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+postgres_url_from_parts = ""
+if all(os.getenv(name, "").strip() for name in ("PGHOST", "PGUSER", "PGPASSWORD", "PGDATABASE")):
+    postgres_url_from_parts = (
+        f"postgresql://{quote(os.getenv('PGUSER').strip())}:{quote(os.getenv('PGPASSWORD').strip())}"
+        f"@{os.getenv('PGHOST').strip()}/{quote(os.getenv('PGDATABASE').strip())}?sslmode=require"
+    )
+
 DATABASE_URL = (
     os.getenv("DATABASE_URL", "").strip()
     or os.getenv("POSTGRES_URL", "").strip()
     or os.getenv("POSTGRES_URL_NON_POOLING", "").strip()
+    or postgres_url_from_parts
     or ("" if os.getenv("VERCEL") else "sqlite:///db.sqlite3")
 )
 if os.getenv("VERCEL") and not DATABASE_URL:
