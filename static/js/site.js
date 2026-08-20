@@ -88,7 +88,7 @@ function updateWhatsAppLink() {
 function syncMenuPricing() {
   const pricingUrl = document.body.dataset.menuPricingUrl;
   if (!pricingUrl || !document.querySelector('.menu-item-action')) return;
-  fetch(pricingUrl)
+  fetch(`${pricingUrl}?v=unit-pricing-3`, {cache: 'no-store'})
     .then((response) => response.ok ? response.json() : {})
     .then((pricing) => {
       const itemPricing = pricing.items || {};
