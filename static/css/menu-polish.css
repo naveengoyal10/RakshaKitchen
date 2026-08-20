@@ -2,6 +2,23 @@
   overflow: hidden;
 }
 
+.order-summary .clear-list {
+  background: transparent;
+  border: 1px solid #e8b65f;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font: 700 .72rem var(--sans);
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+.order-summary .clear-list:hover,
+.order-summary .clear-list:focus-visible {
+  background: #e8b65f;
+  color: var(--ink);
+}
+
 .dish-quantity-controls {
   align-items: center;
   display: inline-flex;
