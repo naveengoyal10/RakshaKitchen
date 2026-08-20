@@ -15,16 +15,36 @@ def _csv_env(name, default=""):
     return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
 
 
-vercel_host = os.getenv("VERCEL_URL", "").strip()
+def _origin_and_host(value):
+    value = value.strip()
+    if not value:
+        return None, None
+    parsed = urlparse(value if "://" in value else f"https://{value}")
+    return f"{parsed.scheme}://{parsed.netloc}", parsed.hostname
+
+
+deployment_origins = []
+deployment_hosts = []
+for configured_url in (
+    os.getenv("VERCEL_URL", ""),
+    os.getenv("VERCEL_PROJECT_PRODUCTION_URL", ""),
+    os.getenv("RAKSHA_SITE_URL", ""),
+):
+    origin, host = _origin_and_host(configured_url)
+    if origin and origin not in deployment_origins:
+        deployment_origins.append(origin)
+    if host and host not in deployment_hosts:
+        deployment_hosts.append(host)
+
 ALLOWED_HOSTS = _csv_env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
-if vercel_host and vercel_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(vercel_host)
+for deployment_host in deployment_hosts:
+    if deployment_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(deployment_host)
 
 CSRF_TRUSTED_ORIGINS = _csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
-if vercel_host:
-    vercel_origin = f"https://{vercel_host}"
-    if vercel_origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(vercel_origin)
+for deployment_origin in deployment_origins:
+    if deployment_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(deployment_origin)
 
 if not DEBUG and not configured_secret_key:
     raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false")
