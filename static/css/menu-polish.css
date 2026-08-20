@@ -2,6 +2,19 @@
   overflow: hidden;
 }
 
+.premium-menu-item .unit-price-display {
+  background: #e8b65f;
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: .72rem;
+  letter-spacing: .01em;
+  line-height: 1.2;
+  padding: 8px 11px;
+  white-space: nowrap;
+}
+
 .order-summary .clear-list {
   background: transparent;
   border: 1px solid #e8b65f;

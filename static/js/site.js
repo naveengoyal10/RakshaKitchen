@@ -91,13 +91,23 @@ function syncMenuPricing() {
   fetch(pricingUrl)
     .then((response) => response.ok ? response.json() : {})
     .then((pricing) => {
+      const itemPricing = pricing.items || {};
+      const variantPricing = pricing.variants || {};
       document.querySelectorAll('.premium-menu-item').forEach((card) => {
         const itemId = card.querySelector('.add-item')?.dataset.foodItemId;
-        const item = pricing[itemId];
+        const item = itemPricing[itemId];
         const price = card.querySelector('.menu-item-action strong');
         if (!item || !price) return;
         const unitName = item.unit === 'gram' ? 'grams' : 'pieces';
+        price.classList.add('unit-price-display');
         price.textContent = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
+        card.querySelectorAll('.food-variant option[value]').forEach((option) => {
+          const variant = variantPricing[option.value];
+          if (!variant) return;
+          const variantUnit = variant.unit === 'gram' ? 'grams' : 'pieces';
+          const variantName = option.textContent.split(' · ')[0];
+          option.textContent = `${variantName} · ₹${variant.price} per ${variant.unit_quantity} ${variantUnit}`;
+        });
       });
     })
     .catch(() => {});

@@ -45,13 +45,24 @@ def menu_detail(request, slug):
 
 def menu_pricing(request):
     items = FoodItem.objects.filter(available=True).values("id", "price", "unit_quantity", "unit")
+    variants = FoodVariant.objects.filter(active=True, food_item__available=True).values("id", "price", "unit_quantity", "unit")
     return JsonResponse({
-        str(item["id"]): {
-            "price": str(item["price"]),
-            "unit_quantity": item["unit_quantity"],
-            "unit": item["unit"],
-        }
-        for item in items
+        "items": {
+            str(item["id"]): {
+                "price": str(item["price"]),
+                "unit_quantity": item["unit_quantity"],
+                "unit": item["unit"],
+            }
+            for item in items
+        },
+        "variants": {
+            str(variant["id"]): {
+                "price": str(variant["price"]),
+                "unit_quantity": variant["unit_quantity"],
+                "unit": variant["unit"],
+            }
+            for variant in variants
+        },
     })
 
 
