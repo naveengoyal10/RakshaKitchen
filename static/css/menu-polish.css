@@ -196,6 +196,8 @@
 }
 
 .premium-menu-item .menu-item-copy {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 14px 8px;
 }
@@ -211,6 +213,37 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   min-width: 150px;
+}
+
+@media (min-width: 901px) {
+  .premium-menu-item {
+    min-height: 190px;
+  }
+
+  .premium-menu-item .menu-item-copy > p {
+    flex: 1;
+  }
+
+  .premium-menu-item .menu-item-action {
+    align-content: center;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    min-width: 190px;
+    padding: 10px 8px 10px 0;
+  }
+
+  .premium-menu-item .menu-item-action .food-variant {
+    max-width: 190px;
+    width: 190px;
+  }
+
+  .premium-menu-item .unit-price-display {
+    max-width: 190px;
+    text-align: center;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 900px) {
