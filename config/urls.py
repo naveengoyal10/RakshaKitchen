@@ -12,5 +12,5 @@ urlpatterns = [
     path("sitemap.xml", sitemap, {"sitemaps": {"kitchen": KitchenSitemap}}),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG or settings.VERCEL:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

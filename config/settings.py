@@ -10,6 +10,7 @@ load_dotenv(BASE_DIR / ".env")
 
 configured_secret_key = os.getenv("DJANGO_SECRET_KEY", "").strip()
 SECRET_KEY = configured_secret_key or "django-insecure-development-only"
+VERCEL = bool(os.getenv("VERCEL"))
 DEBUG = os.getenv("DJANGO_DEBUG", "False" if os.getenv("VERCEL") else "True").lower() == "true"
 
 def _csv_env(name, default=""):
@@ -128,7 +129,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(tempfile.gettempdir()) / "raksha-kitchen-media" if os.getenv("VERCEL") else BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
