@@ -12,6 +12,13 @@
   width: 88%;
 }
 
+.recipe-circle img {
+  display: block;
+  height: 84%;
+  object-fit: contain;
+  width: 84%;
+}
+
 .food-card .food-art {
   background: #f3e8da;
   overflow: hidden;
