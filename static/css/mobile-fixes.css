@@ -54,4 +54,39 @@
   .category-tile p {
     line-height: 1.4;
   }
+
+  .premium-menu-item {
+    grid-template-columns: 86px minmax(0, 1fr);
+  }
+
+  .premium-menu-item .menu-item-copy {
+    min-width: 0;
+  }
+
+  .premium-menu-item h2,
+  .premium-menu-item h2 a,
+  .premium-menu-item .menu-item-copy > p {
+    overflow-wrap: anywhere;
+  }
+
+  .premium-menu-item .menu-item-action {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    min-width: 0;
+    padding: 8px 4px 2px;
+  }
+
+  .premium-menu-item .menu-item-action .food-variant {
+    flex: 1 1 130px;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .premium-menu-item .menu-item-action .add-item {
+    margin-left: 0;
+  }
 }
