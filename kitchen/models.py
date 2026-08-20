@@ -64,9 +64,13 @@ class FoodItem(models.Model):
 
 
 class FoodVariant(models.Model):
+    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams")]
+
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name="variants")
     name = models.CharField(max_length=80, help_text="For example: Half, Full, 250 g, or 1 kg")
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    unit_quantity = models.PositiveIntegerField(default=1, help_text="Number of pieces or grams included at this price")
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="piece")
     active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

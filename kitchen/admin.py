@@ -22,13 +22,13 @@ class CategoryAdmin(admin.ModelAdmin):
 class FoodVariantInline(admin.TabularInline):
     model = FoodVariant
     extra = 1
-    fields = ("name", "price", "active", "display_order")
+    fields = ("name", "price", "unit_quantity", "unit", "active", "display_order")
     ordering = ("display_order", "name")
 
 
 @admin.register(FoodVariant)
 class FoodVariantAdmin(admin.ModelAdmin):
-    list_display = ("food_item", "name", "price", "active", "display_order", "created_at", "updated_at")
+    list_display = ("food_item", "name", "price", "unit_quantity", "unit", "active", "display_order", "created_at", "updated_at")
     list_filter = ("active", "food_item__category")
     list_editable = ("active", "display_order")
     search_fields = ("name", "food_item__name")
