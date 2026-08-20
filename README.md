@@ -21,6 +21,18 @@ A production-minded Django website for a home-style food business. The storefron
 
 Set `DATABASE_URL` to a PostgreSQL URL in production, for example `postgresql://user:password@host:5432/raksha_kitchen`.
 
+## Vercel deployment
+
+Configure these Vercel project environment variables for Production before redeploying:
+
+- `DJANGO_SECRET_KEY`: a long random secret
+- `DJANGO_DEBUG`: `False`
+- `DJANGO_ALLOWED_HOSTS`: your custom domain, if you use one
+- `DJANGO_CSRF_TRUSTED_ORIGINS`: your custom domain as an HTTPS URL, if you use one
+- `DATABASE_URL`: a hosted PostgreSQL connection URL
+
+The Vercel build runs `collectstatic` and applies migrations. Do not use the local SQLite database for production because Vercel's filesystem is temporary.
+
 ## Production security
 
 Set `DJANGO_DEBUG=False`, provide a unique `DJANGO_SECRET_KEY`, configure `DJANGO_ALLOWED_HOSTS`, and set `DJANGO_CSRF_TRUSTED_ORIGINS` to HTTPS origins only. Keep `.env`, database files, uploaded media, and generated static files outside version control. Run `py manage.py check --deploy` before deployment and serve the site behind HTTPS.
