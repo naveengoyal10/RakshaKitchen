@@ -1,7 +1,7 @@
 <article class="food-card" data-food-card>
   <a class="food-card-image-link" href="{% url 'kitchen:menu_detail' item.slug %}" aria-label="View {{ item.name }} details">
     <div class="food-art art-{{ card_index|default:1 }}">
-      {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+      {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">{% else %}<span class="image-fallback">{{ item.category.name }}</span>{% endif %}
       <span>{{ item.category.name }}</span>
     </div>
   </a>
