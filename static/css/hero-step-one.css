@@ -117,6 +117,21 @@
   height: 100%;
 }
 
+.featured .food-art {
+  min-height: 245px;
+  overflow: hidden;
+  position: relative;
+}
+
+.featured .food-art img {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
 .featured .food-info {
   display: flex;
   flex: 1;
@@ -166,6 +181,7 @@
 
   .featured .food-art {
     height: 210px;
+    min-height: 210px;
   }
 
   .featured .food-meta {
