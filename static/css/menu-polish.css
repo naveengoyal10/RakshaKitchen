@@ -2,6 +2,13 @@
   overflow: hidden;
 }
 
+.why-mark img {
+  display: block;
+  height: 70%;
+  object-fit: contain;
+  width: 70%;
+}
+
 .food-card .food-art {
   background: #f3e8da;
   overflow: hidden;
