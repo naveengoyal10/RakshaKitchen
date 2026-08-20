@@ -85,6 +85,24 @@ function updateWhatsAppLink() {
   });
 }
 
+function syncMenuPricing() {
+  const pricingUrl = document.body.dataset.menuPricingUrl;
+  if (!pricingUrl || !document.querySelector('.premium-menu-item')) return;
+  fetch(pricingUrl)
+    .then((response) => response.ok ? response.json() : {})
+    .then((pricing) => {
+      document.querySelectorAll('.premium-menu-item').forEach((card) => {
+        const itemId = card.querySelector('.add-item')?.dataset.foodItemId;
+        const item = pricing[itemId];
+        const price = card.querySelector('.menu-item-action strong');
+        if (!item || !price) return;
+        const unitName = item.unit === 'gram' ? 'grams' : 'pieces';
+        price.textContent = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
+      });
+    })
+    .catch(() => {});
+}
+
 function renderBasket() {
   document.querySelectorAll('.basket-count').forEach((count) => {
     count.textContent = basket.reduce((total, item) => total + item.quantity, 0);
@@ -171,3 +189,4 @@ document.querySelector('.clear-list')?.addEventListener('click', () => {
 document.querySelector('.whatsapp-order')?.addEventListener('click', updateWhatsAppLink);
 
 renderBasket();
+syncMenuPricing();

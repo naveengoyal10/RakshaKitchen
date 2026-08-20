@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Prefetch
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -41,6 +41,18 @@ def menu(request):
 def menu_detail(request, slug):
     item = get_object_or_404(FoodItem, slug=slug, available=True)
     return render(request, "menu_detail.html", {"item": item})
+
+
+def menu_pricing(request):
+    items = FoodItem.objects.filter(available=True).values("id", "price", "unit_quantity", "unit")
+    return JsonResponse({
+        str(item["id"]): {
+            "price": str(item["price"]),
+            "unit_quantity": item["unit_quantity"],
+            "unit": item["unit"],
+        }
+        for item in items
+    })
 
 
 def bulk_orders(request):

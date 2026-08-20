@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="{% static 'css/hero-step-one.css' %}">
   {% block extra_meta %}{% endblock %}
 </head>
-<body data-menu-url="{% url 'kitchen:menu' %}" data-whatsapp-number="{{ whatsapp_number }}">
+<body data-menu-url="{% url 'kitchen:menu' %}" data-menu-pricing-url="{% url 'kitchen:menu_pricing' %}" data-whatsapp-number="{{ whatsapp_number }}">
   {% include "includes/navbar.html" %}
   {% include "includes/messages.html" %}
   <main>{% block content %}{% endblock %}</main>
