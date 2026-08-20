@@ -22,11 +22,15 @@ class Category(models.Model):
         return self.name
 
 class FoodItem(models.Model):
+    UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams")]
+
     name = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="food_items")
     description = models.TextField()
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    unit_quantity = models.PositiveIntegerField(default=1, help_text="Number of pieces or grams included at this price")
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="piece")
     image = models.ImageField(upload_to="menu/", blank=True)
     vegetarian = models.BooleanField(default=False)
     jain_available = models.BooleanField(default=False)

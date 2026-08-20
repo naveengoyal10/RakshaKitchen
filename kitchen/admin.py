@@ -39,7 +39,7 @@ class FoodVariantAdmin(admin.ModelAdmin):
 
 @admin.register(FoodItem)
 class FoodItemAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "price", "vegetarian", "jain_available", "featured", "available", "display_order", "created_at", "updated_at")
+    list_display = ("name", "category", "price", "unit_quantity", "unit", "vegetarian", "jain_available", "featured", "available", "display_order", "created_at", "updated_at")
     list_filter = ("category", "vegetarian", "jain_available", "featured", "available")
     list_editable = ("featured", "available", "display_order")
     prepopulated_fields = {"slug": ("name",)}
