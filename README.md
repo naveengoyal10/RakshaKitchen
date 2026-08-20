@@ -39,7 +39,7 @@ Configure these Vercel project environment variables for Production before redep
 
 After adding or changing these variables, create a new deployment. The build log must contain `Admin user created` or `Admin user updated`; changing an environment variable does not modify an already completed deployment.
 
-The Vercel build runs `collectstatic` and applies migrations. Vercel uses signed-cookie sessions for admin login, but `DATABASE_URL` must still point to hosted PostgreSQL because menu, order, and admin data cannot be stored reliably in local SQLite on Vercel. Set `CLOUDINARY_URL` to persist category and menu images.
+The Vercel build runs `collectstatic` and applies migrations, including creation of the Website Settings record used for the hero image and contact details. Vercel uses signed-cookie sessions for admin login, but `DATABASE_URL` must still point to hosted PostgreSQL because menu, order, and admin data cannot be stored reliably in local SQLite on Vercel. Set `CLOUDINARY_URL` to persist category and menu images.
 
 ## Production security
 
