@@ -99,18 +99,28 @@ function syncMenuPricing() {
         const price = card.querySelector('.menu-item-action strong');
         if (!item || !price) return;
         const unitName = item.unit === 'gram' ? 'grams' : 'pieces';
+        price.dataset.mainPrice = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
         price.classList.add('unit-price-display');
-        price.textContent = `₹${item.price} per ${item.unit_quantity} ${unitName}`;
+        updateSelectedVariantPrice(card, price.dataset.mainPrice);
         card.querySelectorAll('.food-variant option[value]').forEach((option) => {
           const variant = variantPricing[option.value];
           if (!variant) return;
           const variantUnit = variant.unit === 'gram' ? 'grams' : 'pieces';
           const variantName = option.textContent.split(' · ')[0];
-          option.textContent = `${variantName} · ₹${variant.price} per ${variant.unit_quantity} ${variantUnit}`;
+          option.dataset.displayPrice = `₹${variant.price} per ${variant.unit_quantity} ${variantUnit}`;
+          option.textContent = `${variantName} · ${option.dataset.displayPrice}`;
         });
       });
     })
     .catch(() => {});
+}
+
+function updateSelectedVariantPrice(card, fallbackPrice) {
+  const price = card.querySelector('.food-meta strong, .menu-item-action strong');
+  const select = card.querySelector('.food-variant');
+  if (!price || !select) return;
+  const selected = select.selectedOptions[0];
+  price.textContent = selected?.value ? selected.dataset.displayPrice || selected.dataset.variantPrice : fallbackPrice || price.dataset.mainPrice || price.textContent;
 }
 
 function renderBasket() {
@@ -177,6 +187,8 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('change', (event) => {
   if (event.target.closest('.food-variant')) {
+    const select = event.target.closest('.food-variant');
+    updateSelectedVariantPrice(select.closest('[data-food-card]'), select.closest('[data-food-card]').querySelector('.food-meta strong, .menu-item-action strong')?.dataset.mainPrice);
     syncCardQuantities();
     return;
   }
