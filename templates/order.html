@@ -4,6 +4,7 @@
 {% block content %}
 <section class="order-page">
   <div class="order-heading"><p class="eyebrow">A thoughtful order, made simple</p><h1>Bring something<br><em>good to the table.</em></h1><p>Choose your food from the menu, then share a few details so we can prepare everything just right.</p></div>
+  <div class="delivery-order-notice order-delivery-notice"><p>⚠️ <strong>Free delivery is available only within Life Republic Township.</strong></p><p>⏰ <strong>Orders must be placed at least 4 hours in advance.</strong></p></div>
   <div class="order-workspace">
     <aside class="order-summary"><div class="summary-top"><div><p class="eyebrow">Your selection</p><h2>Order summary</h2></div><button class="clear-list" type="button">Clear all</button></div><div class="basket-items"><p class="basket-empty">Your list is empty. Add dishes from the <a href="{% url 'kitchen:menu' %}">menu</a>.</p></div><div class="basket-total"><span>Estimated total</span><strong>₹<span>0</span></strong></div><div class="summary-note"><span>RK</span><p>Freshly prepared in small batches.<br>We’ll confirm your order details soon.</p></div></aside>
     <form class="premium-order-form" method="post" data-order-form>{% csrf_token %}
