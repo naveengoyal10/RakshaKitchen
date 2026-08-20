@@ -8,9 +8,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-only")
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+DEBUG = os.getenv("DJANGO_DEBUG", "False" if os.getenv("VERCEL") else "True").lower() == "true"
+
+def _csv_env(name, default=""):
+    return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
+
+
+vercel_host = os.getenv("VERCEL_URL", "").strip()
+ALLOWED_HOSTS = _csv_env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+if vercel_host and vercel_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(vercel_host)
+
+CSRF_TRUSTED_ORIGINS = _csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
+if vercel_host:
+    vercel_origin = f"https://{vercel_host}"
+    if vercel_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(vercel_origin)
 
 if not DEBUG and SECRET_KEY == "django-insecure-development-only":
     raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false")
