@@ -33,6 +33,10 @@
   text-align: center;
 }
 
+[data-food-card] .add-item {
+  display: none;
+}
+
 .menu-place-order {
   align-items: center;
   background: var(--ink);
