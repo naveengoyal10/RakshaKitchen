@@ -6,9 +6,9 @@ from .models import WebsiteSettings
 
 def website_settings(request):
     settings = WebsiteSettings.objects.first()
-    phone = os.getenv("RAKSHA_PHONE", "+91 98765 43210").strip()
-    email = os.getenv("RAKSHA_EMAIL", "hello@rakshakitchen.in").strip()
-    raw_number = os.getenv("RAKSHA_WHATSAPP", "919876543210").strip()
+    phone = os.getenv("RAKSHA_PHONE", "+91 93051 26262").strip()
+    email = os.getenv("RAKSHA_EMAIL", "raksha.shady@gmail.com").strip()
+    raw_number = os.getenv("RAKSHA_WHATSAPP", "9305126262").strip()
     if settings:
         phone = settings.phone.strip() or phone
         email = settings.email.strip() or email
@@ -17,5 +17,5 @@ def website_settings(request):
         "site_settings": settings,
         "contact_phone": phone,
         "contact_email": email,
-        "whatsapp_number": re.sub(r"\D", "", raw_number) or "919876543210",
+        "whatsapp_number": re.sub(r"\D", "", raw_number) or "9305126262",
     }

@@ -30,6 +30,10 @@ Configure these Vercel project environment variables for Production before redep
 - `DJANGO_ALLOWED_HOSTS`: your custom domain, if you use one
 - `DJANGO_CSRF_TRUSTED_ORIGINS`: your custom domain as an HTTPS URL, if you use one
 - `DATABASE_URL`: a hosted PostgreSQL connection URL
+- `RAKSHA_PHONE`: `+91 93051 26262`
+- `RAKSHA_EMAIL`: `raksha.shady@gmail.com`
+- `RAKSHA_WHATSAPP`: `9305126262`
+- `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: set all three to provision the Django admin account during the build
 
 The Vercel build runs `collectstatic` and applies migrations. Do not use the local SQLite database for production because Vercel's filesystem is temporary.
 
