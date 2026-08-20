@@ -3,10 +3,13 @@
 }
 
 .why-mark img {
+  background: var(--paper);
+  border-radius: 50%;
   display: block;
-  height: 70%;
+  height: 88%;
   object-fit: contain;
-  width: 70%;
+  padding: 6px;
+  width: 88%;
 }
 
 .food-card .food-art {
