@@ -47,6 +47,16 @@
   width: calc(100% - 10vw);
 }
 
+.menu-planning-intro {
+  margin: 76px auto 20px;
+  max-width: 1180px;
+  padding: 0 5vw;
+}
+
+.menu-planning-intro .eyebrow {
+  margin: 0;
+}
+
 .menu-place-order strong,
 .menu-place-order small {
   display: block;
@@ -234,6 +244,11 @@
     margin-bottom: 60px;
     padding: 18px;
     width: calc(100% - 10vw);
+  }
+
+  .menu-planning-intro {
+    margin-top: 58px;
+    padding: 0 5vw;
   }
 
   .menu-place-order b {
