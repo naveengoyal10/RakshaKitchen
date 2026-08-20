@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "").strip()
+
 configured_secret_key = os.getenv("DJANGO_SECRET_KEY", "").strip()
 SECRET_KEY = configured_secret_key or "django-insecure-development-only"
 VERCEL = bool(os.getenv("VERCEL"))
@@ -60,6 +62,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "kitchen",
 ]
+if CLOUDINARY_URL:
+    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -131,6 +135,11 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(tempfile.gettempdir()) / "raksha-kitchen-media" if os.getenv("VERCEL") else BASE_DIR / "media"
+if CLOUDINARY_URL:
+    STORAGES = {
+        "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SESSION_COOKIE_HTTPONLY = True

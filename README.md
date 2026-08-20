@@ -34,11 +34,12 @@ Configure these Vercel project environment variables for Production before redep
 - `RAKSHA_PHONE`: `+91 93051 26262`
 - `RAKSHA_EMAIL`: `raksha.shady@gmail.com`
 - `RAKSHA_WHATSAPP`: `9305126262`
+- `CLOUDINARY_URL`: Cloudinary connection URL for persistent uploaded images
 - `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: set all three to provision the Django admin account during the build
 
 After adding or changing these variables, create a new deployment. The build log must contain `Admin user created` or `Admin user updated`; changing an environment variable does not modify an already completed deployment.
 
-The Vercel build runs `collectstatic` and applies migrations. Vercel uses signed-cookie sessions for admin login, but `DATABASE_URL` must still point to hosted PostgreSQL because menu, order, and admin data cannot be stored reliably in local SQLite on Vercel. Uploaded media is temporarily written to `/tmp` on Vercel; use external object storage for permanent category and menu images.
+The Vercel build runs `collectstatic` and applies migrations. Vercel uses signed-cookie sessions for admin login, but `DATABASE_URL` must still point to hosted PostgreSQL because menu, order, and admin data cannot be stored reliably in local SQLite on Vercel. Set `CLOUDINARY_URL` to persist category and menu images.
 
 ## Production security
 
