@@ -67,6 +67,15 @@ class FoodItem(models.Model):
     def is_available(self):
         return self.available
 
+    @property
+    def unit_price_label(self):
+        if self.unit == "plate":
+            return f"₹{self.price} per plate"
+        unit_name = "gram" if self.unit == "gram" else "piece"
+        if self.unit_quantity != 1:
+            unit_name += "s"
+        return f"₹{self.price} per {self.unit_quantity} {unit_name}"
+
 
 class FoodVariant(models.Model):
     UNIT_CHOICES = [("piece", "Piece"), ("gram", "Grams"), ("plate", "Plate")]
@@ -92,6 +101,15 @@ class FoodVariant(models.Model):
     @property
     def is_available(self):
         return self.active
+
+    @property
+    def unit_price_label(self):
+        if self.unit == "plate":
+            return f"₹{self.price} per plate"
+        unit_name = "gram" if self.unit == "gram" else "piece"
+        if self.unit_quantity != 1:
+            unit_name += "s"
+        return f"₹{self.price} per {self.unit_quantity} {unit_name}"
 
 
 # Compatibility aliases for integrations written against the original names.
