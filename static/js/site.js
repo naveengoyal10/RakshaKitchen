@@ -100,7 +100,7 @@ function syncMenuPricing() {
         const price = action.querySelector('strong');
         if (!item || !price) return;
         const unitText = formatUnitText(item.unit, item.unit_quantity);
-        price.dataset.mainPrice = `₹${item.price} per ${unitText}`;
+        price.dataset.mainPrice = `₹${item.price} for ${unitText}`;
         price.classList.add('unit-price-display');
         updateSelectedVariantPrice(card, price.dataset.mainPrice);
           const baseOption = card.querySelector('.food-variant option[value=""]');
@@ -110,7 +110,7 @@ function syncMenuPricing() {
           if (!variant) return;
           const variantUnitText = formatUnitText(variant.unit, variant.unit_quantity);
           const variantName = option.textContent.split(' · ')[0];
-          option.dataset.displayPrice = `₹${variant.price} per ${variantUnitText}`;
+          option.dataset.displayPrice = `₹${variant.price} for ${variantUnitText}`;
           option.textContent = `${variantName} · ${option.dataset.displayPrice}`;
         });
       });
@@ -134,7 +134,7 @@ function updateSelectedVariantPrice(card, fallbackPrice) {
 
 function normalizePlateLabels() {
   document.querySelectorAll('.menu-item-action strong, .food-meta strong, .food-variant option').forEach((element) => {
-    element.textContent = element.textContent.replace(/per\s+1\s+plate(s)?/gi, 'per plate');
+    element.textContent = element.textContent.replace(/per\s+/gi, 'for ').replace(/for\s+1\s+plate(s)?/gi, 'for plate');
   });
 }
 
