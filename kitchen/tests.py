@@ -10,7 +10,7 @@ from django.urls import reverse
 from .models import Category, CustomerInquiry, FoodItem, FoodVariant, Order, OrderItem
 
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com")
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com", RESEND_API_KEY="", RESEND_FROM_EMAIL="")
 class OrderingFlowTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Test", slug="test")
@@ -243,6 +243,35 @@ class OrderingFlowTests(TestCase):
         self.assertContains(confirmation, "Test Samosa")
         self.assertContains(confirmation, "Pending")
         self.assertContains(confirmation, "Life Republic")
+
+    @override_settings(RESEND_API_KEY="re_test_key", RESEND_FROM_EMAIL="Raksha Kitchen <orders@example.com>")
+    def test_customer_and_admin_emails_use_resend_https_api_when_configured(self):
+        from unittest.mock import patch
+
+        class FakeResponse:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return b'{"id":"test-email-id"}'
+
+        with patch("kitchen.order_emails.urlopen", return_value=FakeResponse()) as urlopen:
+            response = self.post_order({
+                "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 2}]),
+            })
+
+        order = Order.objects.get()
+        self.assertRedirects(response, reverse("kitchen:order_success"), fetch_redirect_response=False)
+        self.assertTrue(order.customer_email_sent)
+        self.assertTrue(order.admin_email_sent)
+        self.assertEqual(urlopen.call_count, 2)
+        self.assertTrue(all(call.args[0].full_url == "https://api.resend.com/emails" for call in urlopen.call_args_list))
+        self.assertTrue(all(call.args[0].get_header("Authorization") == "Bearer re_test_key" for call in urlopen.call_args_list))
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com")
     def test_email_failure_does_not_lose_order_or_retain_cart(self):

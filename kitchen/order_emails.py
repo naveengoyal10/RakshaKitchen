@@ -1,4 +1,7 @@
 import logging
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -34,6 +37,40 @@ def _items_text(order):
 
 
 def _send_email(subject, body, recipient, from_email):
+    resend_api_key = getattr(settings, "RESEND_API_KEY", "").strip()
+    if resend_api_key:
+        sender = getattr(settings, "RESEND_FROM_EMAIL", "").strip()
+        if not sender:
+            raise RuntimeError("RESEND_FROM_EMAIL must be set to a sender address verified with Resend.")
+        request = Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": sender,
+                "to": [recipient],
+                "subject": subject,
+                "text": body,
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {resend_api_key}",
+                "Content-Type": "application/json",
+                "Idempotency-Key": f"raksha-order-email-{subject.rsplit('#', 1)[-1]}-{recipient}",
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=settings.EMAIL_TIMEOUT) as response:
+                if not 200 <= response.status < 300:
+                    raise RuntimeError(f"Resend returned HTTP {response.status}.")
+                result = json.loads(response.read().decode("utf-8"))
+                if not result.get("id"):
+                    raise RuntimeError("Resend did not return an email ID.")
+                return
+        except HTTPError as exc:
+            provider_message = exc.read().decode("utf-8", errors="replace")[:1000]
+            raise RuntimeError(f"Resend HTTP {exc.code}: {provider_message}") from exc
+        except (URLError, TimeoutError) as exc:
+            raise RuntimeError(f"Could not connect to Resend: {exc}") from exc
+
     if (
         settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
         and not settings.EMAIL_HOST

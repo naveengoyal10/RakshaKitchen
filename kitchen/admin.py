@@ -94,7 +94,7 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("order_number", "customer_name", "mobile", "order_type", "status", "total_amount", "preferred_date", "customer_email_sent", "admin_email_sent", "created_at")
-    list_filter = ("status", "order_type", "preferred_date")
+    list_filter = ("status", "order_type", "preferred_date", "customer_email_sent", "admin_email_sent")
     search_fields = ("order_number", "customer_name", "mobile", "email", "address")
     ordering = ("-created_at",)
     readonly_fields = ("order_number", "total_amount", "submission_token", "customer_email_sent", "admin_email_sent", "email_error", "created_at", "updated_at")

@@ -26,6 +26,8 @@ For local email testing, `DEBUG=True` defaults to `django.core.mail.backends.con
 New/updated environment variables for checkout mail:
 
 - `ADMIN_ORDER_EMAIL`: destination for new order alerts (required to deliver admin notifications)
+- `RESEND_API_KEY`: recommended on Vercel; API key for HTTPS email delivery
+- `RESEND_FROM_EMAIL`: sender verified with Resend, e.g. `Raksha Kitchen <orders@your-verified-domain>`
 - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: SMTP server settings
 - `EMAIL_USE_TLS`: use STARTTLS (default `True`)
 - `EMAIL_USE_SSL`: use implicit TLS (default `False`; do not enable together with TLS)
@@ -33,7 +35,7 @@ New/updated environment variables for checkout mail:
 - `DEFAULT_FROM_EMAIL`: verified sender/from address (defaults to `EMAIL_HOST_USER`, then `orders@rakshakitchen.in`)
 - `RAKSHA_PHONE`, `RAKSHA_EMAIL`: business contact shown in receipts (existing storefront variables)
 
-Set SMTP credentials and `ADMIN_ORDER_EMAIL` as environment variables in Vercel Project Settings; do not commit credentials to `.env` or source control. Redeploy after changing environment variables. Configure a valid sender address with the provider. The Vercel build already applies migrations; locally run `py manage.py migrate` before using the updated checkout. To set a product minimum, open its Food Item or Food Variant in Django Admin and set **Minimum quantity** (defaults to 1).
+Recommended Vercel setup: verify a sending domain with Resend, then set `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `ADMIN_ORDER_EMAIL` in Vercel Project Settings for the Production environment. With `RESEND_API_KEY` configured, the app sends using Resend's HTTPS API instead of SMTP; SMTP remains a fallback for other deployments. Do not commit credentials to `.env` or source control. Redeploy after setting environment variables. The sender domain must be verified by the provider. The Vercel build already applies migrations; locally run `py manage.py migrate` before using the updated checkout. To set a product minimum, open its Food Item or Food Variant in Django Admin and set **Minimum quantity** (defaults to 1).
 
 Run checkout and notification tests with `py manage.py test kitchen`. The tests use Django’s in-memory email backend and do not send real mail.
 

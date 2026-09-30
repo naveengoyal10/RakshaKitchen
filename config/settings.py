@@ -156,6 +156,8 @@ EMAIL_BACKEND = os.getenv(
 )
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "orders@rakshakitchen.in")
 ADMIN_ORDER_EMAIL = os.getenv("ADMIN_ORDER_EMAIL", "").strip()
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "").strip()
 RAKSHA_PHONE = os.getenv("RAKSHA_PHONE", "+91 93051 26262").strip()
 RAKSHA_EMAIL = os.getenv("RAKSHA_EMAIL", "raksha.shady@gmail.com").strip()
 
