@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Prefetch
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -98,6 +98,93 @@ def robots(request):
     )
 
 
+def _resolve_cart_items(raw_cart):
+    if not isinstance(raw_cart, list):
+        raise ValueError("The cart data is invalid.")
+
+    requested_items = {}
+    for cart_item in raw_cart:
+        if not isinstance(cart_item, dict):
+            raise ValueError("The cart data is invalid.")
+        try:
+            food_item_id = int(cart_item.get("food_item_id"))
+            variant_id = int(cart_item["variant_id"]) if cart_item.get("variant_id") else None
+            quantity = int(cart_item.get("quantity"))
+        except (KeyError, TypeError, ValueError):
+            raise ValueError("The cart data is invalid.") from None
+        if not 1 <= quantity <= 999:
+            raise ValueError("Each quantity must be between 1 and 999.")
+
+        key = (food_item_id, variant_id)
+        requested_items[key] = requested_items.get(key, 0) + quantity
+        if requested_items[key] > 999:
+            raise ValueError("Each quantity must be between 1 and 999.")
+
+    items = []
+    total = Decimal("0")
+    for (food_item_id, variant_id), quantity in requested_items.items():
+        food_item = FoodItem.objects.filter(pk=food_item_id, available=True).select_related("category").first()
+        if not food_item:
+            raise ValueError("One of the selected items is no longer available.")
+
+        variant = None
+        price = food_item.price
+        unit_price_label = food_item.unit_price_label
+        if variant_id:
+            variant = FoodVariant.objects.filter(pk=variant_id, food_item=food_item, active=True).first()
+            if not variant:
+                raise ValueError("One of the selected sizes is no longer available.")
+            price = variant.price
+            unit_price_label = variant.unit_price_label
+
+        subtotal = price * quantity
+        total += subtotal
+        items.append({
+            "key": f"{food_item.pk}:{variant.pk if variant else 'base'}",
+            "food_item_id": food_item.pk,
+            "variant_id": variant.pk if variant else None,
+            "name": food_item.name,
+            "variant_name": variant.name if variant else "",
+            "image_url": food_item.image.url if food_item.image else "",
+            "category_name": food_item.category.name,
+            "unit_price_label": unit_price_label,
+            "price": str(price),
+            "quantity": quantity,
+            "subtotal": str(subtotal),
+        })
+    return items, total
+
+
+def cart(request):
+    if request.method == "POST":
+        try:
+            payload = json.loads(request.body or b"{}")
+            items, total = _resolve_cart_items(payload.get("cart"))
+        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError, ValueError) as error:
+            message = str(error) or "The cart data is invalid."
+            return JsonResponse({"error": message}, status=400)
+
+        request.session["cart"] = [
+            {"food_item_id": item["food_item_id"], "variant_id": item["variant_id"], "quantity": item["quantity"]}
+            for item in items
+        ]
+        return JsonResponse({"items": items, "total": str(total)})
+
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET", "POST"])
+
+    try:
+        items, total = _resolve_cart_items(request.session.get("cart", []))
+    except ValueError:
+        items, total = [], Decimal("0")
+        request.session["cart"] = []
+    return render(request, "cart.html", {
+        "cart_items": items,
+        "cart_total": total,
+        "cart_snapshot": {"items": items, "total": str(total)},
+    })
+
+
 def order(request):
     if request.method == "POST":
         form = OrderForm(request.POST)
@@ -153,6 +240,7 @@ def order(request):
                         ])
                     request.session["last_order_id"] = new_order.pk
                     request.session["last_order_created_at"] = timezone.now().isoformat()
+                    request.session.pop("cart", None)
                     return redirect("kitchen:order_success")
     else:
         form = OrderForm()

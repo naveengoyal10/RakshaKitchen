@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Your Cart | Raksha Kitchen{% endblock %}
+{% block meta_description %}Review your Raksha Kitchen cart, update quantities, and continue to checkout.{% endblock %}
+{% block content %}
+<section class="cart-page" data-cart-page>
+  <div class="cart-heading">
+    <p class="eyebrow">Your selection</p>
+    <h1>Your <em>cart.</em></h1>
+    <p>Review your dishes and quantities before checkout.</p>
+  </div>
+  <p class="cart-error" data-cart-error role="alert" hidden></p>
+  <form class="cart-csrf-token" aria-hidden="true">{% csrf_token %}</form>
+  <div class="cart-layout">
+    <div class="cart-items" data-cart-items aria-live="polite">
+      {% if cart_items %}
+        {% for item in cart_items %}
+          <article class="cart-line" data-cart-line data-cart-key="{{ item.key }}">
+            <div class="cart-product-image">
+              {% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">{% else %}<span>{{ item.category_name }}</span>{% endif %}
+            </div>
+            <div class="cart-product-info">
+              <h2>{{ item.name }}{% if item.variant_name %}<small>{{ item.variant_name }}</small>{% endif %}</h2>
+              <p class="cart-unit-price"><span>Price per unit</span>{{ item.unit_price_label }}</p>
+              <div class="cart-line-actions">
+                <div class="cart-quantity-controls" aria-label="Quantity controls for {{ item.name }}">
+                  <button type="button" data-cart-decrement="{{ item.key }}" aria-label="Decrease {{ item.name }} quantity">−</button>
+                  <output data-cart-quantity="{{ item.key }}">{{ item.quantity }}</output>
+                  <button type="button" data-cart-increment="{{ item.key }}" aria-label="Increase {{ item.name }} quantity">+</button>
+                </div>
+                <button class="cart-remove" type="button" data-cart-remove="{{ item.key }}">Remove</button>
+              </div>
+            </div>
+            <div class="cart-line-subtotal"><span class="cart-line-math">₹{{ item.price }} × {{ item.quantity }}</span><span>Subtotal</span><strong>₹<b data-cart-subtotal="{{ item.key }}">{{ item.subtotal|floatformat:2 }}</b></strong></div>
+          </article>
+        {% endfor %}
+      {% else %}
+        <div class="cart-empty" data-cart-empty>
+          <span class="cart-empty-mark" aria-hidden="true">RK</span>
+          <h2>Your cart is empty.</h2>
+          <a class="button button-dark" href="{% url 'kitchen:menu' %}">Continue Shopping <span>↗</span></a>
+        </div>
+      {% endif %}
+    </div>
+    <aside class="cart-summary" data-cart-summary {% if not cart_items %}hidden{% endif %}>
+      <p class="eyebrow">Order total</p>
+      <h2>Cart summary</h2>
+      <div class="cart-total-line"><span>Total</span><strong>₹<b data-cart-total>{{ cart_total|floatformat:2 }}</b></strong></div>
+      <a class="button button-dark cart-checkout is-disabled" data-cart-checkout href="{% url 'kitchen:order' %}" aria-disabled="true" tabindex="-1">Proceed to Checkout <span>↗</span></a>
+      <a class="cart-continue" href="{% url 'kitchen:menu' %}">← Continue Shopping</a>
+      <p class="cart-secure-note">Your order total is verified using current menu prices at checkout.</p>
+    </aside>
+  </div>
+</section>
+{{ cart_snapshot|json_script:"server-cart-data" }}
+{% endblock %}

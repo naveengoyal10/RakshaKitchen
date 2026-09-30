@@ -76,6 +76,15 @@ class OrderingFlowTests(TestCase):
                 self.assertContains(response, "Add to Cart")
                 self.assertContains(response, "Buy Now")
 
+    def test_shared_mobile_cart_access_and_checkout_action_are_present(self):
+        home_response = self.client.get(reverse("kitchen:home"))
+        self.assertContains(home_response, 'class="mobile-cart-link" href="/cart"')
+        self.assertContains(home_response, "data-sticky-cart")
+
+        checkout_response = self.client.get(reverse("kitchen:order"))
+        self.assertContains(checkout_response, "PLACE ORDER")
+        self.assertContains(checkout_response, "data-mobile-place-order")
+
     def test_detail_page_only_offers_active_variants(self):
         active_variant = FoodVariant.objects.create(food_item=self.food_item, name="Active size", price=Decimal("75.00"), active=True)
         FoodVariant.objects.create(food_item=self.food_item, name="Retired size", price=Decimal("90.00"), active=False)
@@ -84,6 +93,33 @@ class OrderingFlowTests(TestCase):
 
         self.assertContains(response, active_variant.name)
         self.assertNotContains(response, "Retired size")
+
+    def test_cart_page_has_empty_state_and_continue_shopping(self):
+        response = self.client.get(reverse("kitchen:cart"))
+
+        self.assertContains(response, "Your cart is empty.")
+        self.assertContains(response, "Continue Shopping")
+        self.assertEqual(reverse("kitchen:cart"), "/cart")
+
+    def test_cart_api_uses_database_prices_and_merges_duplicate_items(self):
+        response = self.client.post(reverse("kitchen:cart"), json.dumps({
+            "cart": [
+                {"food_item_id": self.food_item.pk, "variant_id": None, "quantity": 2, "price": "0.01"},
+                {"food_item_id": self.food_item.pk, "variant_id": None, "quantity": 2, "price": "9999.00"},
+                {"food_item_id": self.second_item.pk, "variant_id": self.variant.pk, "quantity": 1, "price": "0"},
+            ],
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        snapshot = response.json()
+        self.assertEqual(snapshot["total"], "320.00")
+        self.assertEqual(len(snapshot["items"]), 2)
+        self.assertEqual(snapshot["items"][0]["quantity"], 4)
+        self.assertEqual(snapshot["items"][0]["price"], "50.00")
+
+        cart_page = self.client.get(reverse("kitchen:cart"))
+        self.assertContains(cart_page, "Test Samosa")
+        self.assertContains(cart_page, "200.00")
 
     def test_order_item_rejects_variant_from_another_food(self):
         item = OrderItem(order=Order(customer_name="A", mobile="9876543210", address="A"), food_item=self.food_item, variant=self.variant, quantity=1, price=Decimal("50"), subtotal=Decimal("50"))
