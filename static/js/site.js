@@ -336,13 +336,18 @@ async function syncCartWithServer() {
     saveBasket(false);
     renderBasket();
     renderCartPage(snapshot);
+    const orderFeedback = document.querySelector('[data-order-feedback]');
+    if (orderFeedback) {
+      orderFeedback.textContent = (snapshot.warnings || []).join(' ');
+      orderFeedback.hidden = !snapshot.warnings?.length;
+    }
     const warning = document.querySelector('[data-cart-error]');
     if (warning && snapshot.warnings?.length) {
       warning.textContent = snapshot.warnings.join(' ');
       warning.hidden = false;
     }
   } catch (error) {
-    const message = document.querySelector('[data-cart-error]');
+    const message = document.querySelector('[data-cart-error], [data-order-feedback]');
     if (message) {
       message.textContent = error.message;
       message.hidden = false;
@@ -457,6 +462,24 @@ if (document.querySelector('[data-cart-page]')) {
 }
 
 document.querySelector('[data-order-form]')?.addEventListener('submit', (event) => {
+  const form = event.currentTarget;
+  const cartInput = form.querySelector('[name="cart_data"]');
+  let orderItems = [];
+  try {
+    orderItems = JSON.parse(cartInput?.value || '[]');
+  } catch (error) {
+    orderItems = [];
+  }
+  if (!Array.isArray(orderItems) || !orderItems.length) {
+    event.preventDefault();
+    const feedback = form.querySelector('[data-order-feedback]');
+    if (feedback) {
+      feedback.textContent = 'Your cart is empty. Add at least one item before placing your order.';
+      feedback.hidden = false;
+      feedback.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+    return;
+  }
   const submitButtons = document.querySelectorAll('[data-order-form] button[type="submit"], [data-mobile-place-order]');
   if ([...submitButtons].some((button) => button.disabled)) {
     event.preventDefault();
@@ -466,4 +489,18 @@ document.querySelector('[data-order-form]')?.addEventListener('submit', (event) 
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
   });
+});
+
+document.querySelector('[data-order-form]')?.addEventListener('invalid', (event) => {
+  if (event.target === document.querySelector('[data-order-form] [name="cart_data"]')) return;
+  const feedback = document.querySelector('[data-order-feedback]');
+  if (!feedback || !feedback.hidden) return;
+  feedback.textContent = 'Please complete the required customer and delivery details before placing your order.';
+  feedback.hidden = false;
+}, true);
+
+document.querySelector('[data-order-form]')?.addEventListener('input', (event) => {
+  const form = event.currentTarget;
+  const feedback = form.querySelector('[data-order-feedback]');
+  if (feedback && form.checkValidity()) feedback.hidden = true;
 });

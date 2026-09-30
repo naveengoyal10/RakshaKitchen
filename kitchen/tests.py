@@ -193,6 +193,14 @@ class OrderingFlowTests(TestCase):
         self.assertEqual(Order.objects.count(), 0)
         self.assertContains(response, "Enter a valid email address")
 
+    def test_checkout_without_cart_items_does_not_create_order(self):
+        response = self.post_order({"cart_data": "[]"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertContains(response, "Add at least one food item before submitting")
+        self.assertContains(response, "We couldn't place your order yet")
+
     def test_duplicate_checkout_submission_creates_only_one_order(self):
         self.client.get(reverse("kitchen:order"))
         data = {
