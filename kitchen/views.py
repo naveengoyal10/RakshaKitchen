@@ -39,7 +39,11 @@ def menu(request):
 
 
 def menu_detail(request, slug):
-    item = get_object_or_404(FoodItem, slug=slug, available=True)
+    item = get_object_or_404(
+        FoodItem.objects.prefetch_related(Prefetch("variants", queryset=FoodVariant.objects.filter(active=True))),
+        slug=slug,
+        available=True,
+    )
     return render(request, "menu_detail.html", {"item": item})
 
 
@@ -76,7 +80,9 @@ def bulk_orders(request):
             return redirect("kitchen:bulk_orders")
     else:
         form = CustomerInquiryForm()
-    popular_items = FoodItem.objects.filter(available=True).order_by("-featured", "display_order", "name")[:6]
+    popular_items = FoodItem.objects.filter(available=True).prefetch_related(
+        Prefetch("variants", queryset=FoodVariant.objects.filter(active=True))
+    ).order_by("-featured", "display_order", "name")[:6]
     return render(request, "bulk_orders.html", {"form": form, "popular_items": popular_items})
 
 

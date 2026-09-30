@@ -12,6 +12,16 @@ let basket = [];
 try {
   const storedBasket = JSON.parse(localStorage.getItem(basketKey) || '[]');
   basket = Array.isArray(storedBasket) ? storedBasket.filter((item) => item && Number.isInteger(item.quantity) && item.quantity > 0) : [];
+  const mergedBasket = new Map();
+  basket.forEach((item) => {
+    item.key = item.food_item_id
+      ? `${Number(item.food_item_id)}:${item.variant_id ? Number(item.variant_id) : 'base'}`
+      : item.key || `${item.name}:${item.variant_id || 'base'}`;
+    const existing = mergedBasket.get(item.key);
+    if (existing) existing.quantity += item.quantity;
+    else mergedBasket.set(item.key, item);
+  });
+  basket = [...mergedBasket.values()];
 } catch (error) {
   localStorage.removeItem(basketKey);
 }
@@ -36,9 +46,9 @@ function escapeHtml(value) {
 }
 
 function getCardItemKey(card) {
-  const addButton = card.querySelector('.add-item');
+  const addButton = card.querySelector('.add-to-cart');
   const variantSelect = card.querySelector('.food-variant');
-  return `${addButton.dataset.itemName}:${variantSelect?.value || 'standard'}`;
+  return `${Number(addButton.dataset.foodItemId)}:${variantSelect?.value || 'base'}`;
 }
 
 function getCardItem(card) {
@@ -63,7 +73,7 @@ function syncCardQuantities() {
 }
 
 function addCardItem(card) {
-  const button = card.querySelector('.add-item');
+  const button = card.querySelector('.add-to-cart');
   const variantSelect = card.querySelector('.food-variant');
   const selectedVariant = variantSelect?.selectedOptions[0];
   const variantId = variantSelect?.value ? Number(variantSelect.value) : null;
@@ -74,6 +84,15 @@ function addCardItem(card) {
   else basket.push({key: itemKey, food_item_id: Number(button.dataset.foodItemId), variant_id: variantId, variant_name: variantName, name: button.dataset.itemName, price: selectedVariant?.dataset.variantPrice || button.dataset.itemPrice, quantity: 1});
   saveBasket();
   renderBasket();
+}
+
+function showCartToast(message) {
+  const toast = document.querySelector('.cart-toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  window.clearTimeout(showCartToast.timeout);
+  showCartToast.timeout = window.setTimeout(() => toast.classList.remove('is-visible'), 1800);
 }
 
 function updateWhatsAppLink() {
@@ -148,7 +167,7 @@ function renderBasket() {
   const container = document.querySelector('.basket-items');
   if (!container) return;
   const menuUrl = document.body.dataset.menuUrl;
-  container.innerHTML = basket.length ? basket.map((item) => { const safeName = escapeHtml(item.name); const itemKey = encodeURIComponent(item.name); return `<div class="basket-line"><span>${safeName}</span><div class="basket-line-controls"><button type="button" data-decrement-item="${itemKey}" aria-label="Decrease ${safeName} quantity">−</button><input type="number" min="1" value="${item.quantity}" data-quantity-item="${itemKey}" aria-label="${safeName} quantity"><button type="button" data-increment-item="${itemKey}" aria-label="Increase ${safeName} quantity">+</button></div><strong>₹${(Number(item.price) * item.quantity).toFixed(2)} <button type="button" data-remove-item="${itemKey}" aria-label="Remove ${safeName}">×</button></strong></div>`; }).join('') : `<p class="basket-empty">Your list is empty. Add dishes from the <a href="${menuUrl}">menu</a>.</p>`;
+  container.innerHTML = basket.length ? basket.map((item) => { const label = item.variant_name ? `${item.name} · ${item.variant_name}` : item.name; const safeName = escapeHtml(label); const itemKey = encodeURIComponent(item.key); return `<div class="basket-line"><span>${safeName}</span><div class="basket-line-controls"><button type="button" data-decrement-item="${itemKey}" aria-label="Decrease ${safeName} quantity">−</button><input type="number" min="1" max="999" value="${item.quantity}" data-quantity-item="${itemKey}" aria-label="${safeName} quantity"><button type="button" data-increment-item="${itemKey}" aria-label="Increase ${safeName} quantity">+</button></div><strong>₹${(Number(item.price) * item.quantity).toFixed(2)} <button type="button" data-remove-item="${itemKey}" aria-label="Remove ${safeName}">×</button></strong></div>`; }).join('') : `<p class="basket-empty">Your cart is empty. Add dishes from the <a href="${menuUrl}">menu</a>.</p>`;
   const total = basket.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const totalElement = document.querySelector('.basket-total strong span');
   if (totalElement) totalElement.textContent = total.toFixed(2);
@@ -158,15 +177,19 @@ function renderBasket() {
   if (cartInput) cartInput.value = JSON.stringify(basket.map((item) => ({food_item_id: item.food_item_id || null, name: item.name, variant_id: item.variant_id, quantity: item.quantity})));
 }
 
-document.querySelectorAll('.add-item').forEach((button) => {
-  button.addEventListener('click', () => {
-    addCardItem(button.closest('[data-food-card]'));
-    button.innerHTML = 'Added <span>✓</span>';
-    window.setTimeout(() => { button.innerHTML = 'Add <span>+</span>'; }, 1200);
-  });
-});
-
 document.addEventListener('click', (event) => {
+  const addButton = event.target.closest('.add-to-cart');
+  if (addButton) {
+    addCardItem(addButton.closest('[data-food-card]'));
+    showCartToast('Added to cart');
+    return;
+  }
+  const buyButton = event.target.closest('.buy-now');
+  if (buyButton) {
+    addCardItem(buyButton.closest('[data-food-card]'));
+    window.location.assign(document.body.dataset.orderUrl);
+    return;
+  }
   const cardQuantityButton = event.target.closest('[data-card-increment], [data-card-decrement]');
   if (cardQuantityButton) {
     const card = cardQuantityButton.closest('[data-food-card]');
@@ -184,10 +207,10 @@ document.addEventListener('click', (event) => {
   }
   const quantityButton = event.target.closest('[data-increment-item], [data-decrement-item]');
   if (quantityButton) {
-    const itemName = decodeURIComponent(quantityButton.dataset.incrementItem || quantityButton.dataset.decrementItem);
-    const item = basket.find((basketItem) => basketItem.name === itemName);
+    const itemKey = decodeURIComponent(quantityButton.dataset.incrementItem || quantityButton.dataset.decrementItem);
+    const item = basket.find((basketItem) => basketItem.key === itemKey);
     if (item) {
-      item.quantity = Math.max(1, item.quantity + (quantityButton.dataset.incrementItem ? 1 : -1));
+      item.quantity = Math.min(999, Math.max(1, item.quantity + (quantityButton.dataset.incrementItem ? 1 : -1)));
       saveBasket();
       renderBasket();
     }
@@ -195,7 +218,7 @@ document.addEventListener('click', (event) => {
   }
   const removeButton = event.target.closest('[data-remove-item]');
   if (!removeButton) return;
-  basket = basket.filter((item) => item.name !== decodeURIComponent(removeButton.dataset.removeItem));
+  basket = basket.filter((item) => item.key !== decodeURIComponent(removeButton.dataset.removeItem));
   saveBasket();
   renderBasket();
 });
@@ -209,9 +232,9 @@ document.addEventListener('change', (event) => {
   }
   const quantityInput = event.target.closest('[data-quantity-item]');
   if (!quantityInput) return;
-  const item = basket.find((basketItem) => basketItem.name === decodeURIComponent(quantityInput.dataset.quantityItem));
+  const item = basket.find((basketItem) => basketItem.key === decodeURIComponent(quantityInput.dataset.quantityItem));
   if (item) {
-    item.quantity = Math.max(1, Number.parseInt(quantityInput.value, 10) || 1);
+    item.quantity = Math.min(999, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
     saveBasket();
     renderBasket();
   }

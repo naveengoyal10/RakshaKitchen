@@ -61,6 +61,30 @@ class OrderingFlowTests(TestCase):
         self.assertEqual(Order.objects.count(), 0)
         self.assertContains(response, "selected sizes is no longer available")
 
+    def test_product_pages_show_cart_and_buy_now_controls(self):
+        self.food_item.featured = True
+        self.food_item.save(update_fields=["featured"])
+        product_pages = [
+            reverse("kitchen:home"),
+            reverse("kitchen:menu"),
+            reverse("kitchen:menu_detail", args=[self.food_item.slug]),
+            reverse("kitchen:bulk_orders"),
+        ]
+        for url in product_pages:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, "Add to Cart")
+                self.assertContains(response, "Buy Now")
+
+    def test_detail_page_only_offers_active_variants(self):
+        active_variant = FoodVariant.objects.create(food_item=self.food_item, name="Active size", price=Decimal("75.00"), active=True)
+        FoodVariant.objects.create(food_item=self.food_item, name="Retired size", price=Decimal("90.00"), active=False)
+
+        response = self.client.get(reverse("kitchen:menu_detail", args=[self.food_item.slug]))
+
+        self.assertContains(response, active_variant.name)
+        self.assertNotContains(response, "Retired size")
+
     def test_order_item_rejects_variant_from_another_food(self):
         item = OrderItem(order=Order(customer_name="A", mobile="9876543210", address="A"), food_item=self.food_item, variant=self.variant, quantity=1, price=Decimal("50"), subtotal=Decimal("50"))
         with self.assertRaises(ValidationError):
