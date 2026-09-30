@@ -3,12 +3,14 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Category, CustomerInquiry, FoodItem, FoodVariant, Order, OrderItem
 
 
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com")
 class OrderingFlowTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Test", slug="test")
@@ -30,11 +32,26 @@ class OrderingFlowTests(TestCase):
         )
         self.variant = FoodVariant.objects.create(food_item=self.second_item, name="Large", price=Decimal("120.00"), active=True)
 
-    def test_order_calculates_multiple_items_from_database_prices(self):
-        response = self.client.post(reverse("kitchen:order"), {
+    def post_order(self, data):
+        self.client.get(reverse("kitchen:order"))
+        payload = {
             "customer_name": "Asha",
             "mobile": "9876543210",
+            "email": "asha@example.com",
             "address": "Test address",
+            "building_society": "Life Republic",
+            "flat_number": "A-101",
+            "preferred_date": (date.today() + timedelta(days=1)).isoformat(),
+            "preferred_time": "18:00",
+            "order_type": "delivery",
+            "cart_data": "[]",
+            **data,
+            "submission_token": self.client.session["checkout_token"],
+        }
+        return self.client.post(reverse("kitchen:order"), payload)
+
+    def test_order_calculates_multiple_items_from_database_prices(self):
+        response = self.post_order({
             "preferred_date": (date.today() + timedelta(days=2)).isoformat(),
             "order_type": "delivery",
             "notes": "Pack carefully",
@@ -48,12 +65,12 @@ class OrderingFlowTests(TestCase):
         self.assertEqual(order.total_amount, Decimal("460.00"))
         self.assertEqual(order.items.count(), 2)
         self.assertEqual(order.items.get(food_item=self.second_item).price, Decimal("120.00"))
+        self.assertEqual(order.status, "pending")
+        self.assertTrue(order.order_number.startswith(f"RK-{date.today():%Y%m%d}-"))
+        self.assertEqual(order.items.get(food_item=self.second_item).product_name, self.second_item.name)
 
     def test_mismatched_variant_is_rejected(self):
-        response = self.client.post(reverse("kitchen:order"), {
-            "customer_name": "Asha",
-            "mobile": "9876543210",
-            "address": "Test address",
+        response = self.post_order({
             "order_type": "delivery",
             "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "variant_id": self.variant.pk, "quantity": 1}]),
         })
@@ -120,6 +137,144 @@ class OrderingFlowTests(TestCase):
         cart_page = self.client.get(reverse("kitchen:cart"))
         self.assertContains(cart_page, "Test Samosa")
         self.assertContains(cart_page, "200.00")
+
+    def test_minimum_quantity_is_enforced_by_cart_and_checkout(self):
+        self.food_item.minimum_quantity = 4
+        self.food_item.save(update_fields=["minimum_quantity"])
+        cart_response = self.client.post(reverse("kitchen:cart"), json.dumps({
+            "cart": [{"food_item_id": self.food_item.pk, "quantity": 1}],
+        }), content_type="application/json")
+        self.assertEqual(cart_response.status_code, 200)
+        self.assertEqual(cart_response.json()["items"][0]["quantity"], 4)
+        self.assertTrue(cart_response.json()["warnings"])
+
+        response = self.post_order({
+            "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 3}]),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertContains(response, "minimum order quantity of 4")
+
+    def test_checkout_reloads_price_after_cart_add_and_rejects_unavailable_products(self):
+        cart_response = self.client.post(reverse("kitchen:cart"), json.dumps({
+            "cart": [{"food_item_id": self.food_item.pk, "quantity": 2, "price": "1.00"}],
+        }), content_type="application/json")
+        self.assertEqual(cart_response.status_code, 200)
+        self.food_item.price = Decimal("75.00")
+        self.food_item.save(update_fields=["price"])
+
+        response = self.post_order({
+            "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 2, "price": "1.00"}]),
+        })
+        order = Order.objects.get()
+        self.assertEqual(order.total_amount, Decimal("150.00"))
+        self.assertEqual(order.items.get().price, Decimal("75.00"))
+
+        self.food_item.available = False
+        self.food_item.save(update_fields=["available"])
+        self.client.get(reverse("kitchen:order"))
+        unavailable = self.client.post(reverse("kitchen:order"), {
+            "customer_name": "Asha", "mobile": "9876543210", "email": "asha@example.com",
+            "address": "Test address", "building_society": "Life Republic", "flat_number": "A-101",
+            "preferred_date": (date.today() + timedelta(days=1)).isoformat(), "preferred_time": "18:00",
+            "order_type": "delivery", "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 1}]),
+            "submission_token": self.client.session["checkout_token"],
+        })
+        self.assertEqual(unavailable.status_code, 200)
+        self.assertEqual(Order.objects.count(), 1)
+        self.assertContains(unavailable, "no longer available")
+
+    def test_invalid_customer_email_prevents_order_creation(self):
+        response = self.post_order({
+            "email": "not-an-email",
+            "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 1}]),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertContains(response, "Enter a valid email address")
+
+    def test_duplicate_checkout_submission_creates_only_one_order(self):
+        self.client.get(reverse("kitchen:order"))
+        data = {
+            "customer_name": "Asha",
+            "mobile": "9876543210",
+            "email": "asha@example.com",
+            "address": "Test address",
+            "building_society": "Life Republic",
+            "flat_number": "A-101",
+            "preferred_date": (date.today() + timedelta(days=1)).isoformat(),
+            "preferred_time": "18:00",
+            "order_type": "delivery",
+            "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 1}]),
+            "submission_token": self.client.session["checkout_token"],
+        }
+        first = self.client.post(reverse("kitchen:order"), data)
+        second = self.client.post(reverse("kitchen:order"), data)
+        self.assertRedirects(first, reverse("kitchen:order_success"), fetch_redirect_response=False)
+        self.assertRedirects(second, reverse("kitchen:order_success"), fetch_redirect_response=False)
+        self.assertEqual(Order.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 2)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com", RAKSHA_PHONE="+91 93051 26262")
+    def test_customer_and_admin_email_sent_after_order_is_saved(self):
+        response = self.post_order({
+            "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 2}]),
+        })
+        order = Order.objects.get()
+        self.assertRedirects(response, reverse("kitchen:order_success"), fetch_redirect_response=False)
+        self.assertTrue(order.customer_email_sent)
+        self.assertTrue(order.admin_email_sent)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn(order.order_number, mail.outbox[0].subject)
+        self.assertIn("₹100.00", mail.outbox[0].body)
+        self.assertIn("A-101", mail.outbox[1].body)
+        self.assertNotIn("cart", self.client.session)
+        confirmation = self.client.get(reverse("kitchen:order_success"))
+        self.assertContains(confirmation, "Order successfully")
+        self.assertContains(confirmation, order.order_number)
+        self.assertContains(confirmation, "Test Samosa")
+        self.assertContains(confirmation, "Pending")
+        self.assertContains(confirmation, "Life Republic")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", DEFAULT_FROM_EMAIL="orders@example.com", ADMIN_ORDER_EMAIL="admin@example.com")
+    def test_email_failure_does_not_lose_order_or_retain_cart(self):
+        from unittest.mock import patch
+
+        with self.assertLogs("kitchen.order_emails", level="ERROR"):
+            with patch("kitchen.order_emails.send_mail", side_effect=OSError("mail service unavailable")):
+                response = self.post_order({
+                    "cart_data": json.dumps([{"food_item_id": self.food_item.pk, "quantity": 1}]),
+                })
+        order = Order.objects.get()
+        self.assertRedirects(response, reverse("kitchen:order_success"), fetch_redirect_response=False)
+        self.assertEqual(order.items.count(), 1)
+        self.assertFalse(order.customer_email_sent)
+        self.assertFalse(order.admin_email_sent)
+        self.assertTrue(order.email_error)
+        self.assertNotIn("cart", self.client.session)
+
+        with patch("kitchen.order_emails.send_mail", return_value=1) as send_mail_mock:
+            from .order_emails import send_order_notifications
+            self.assertTrue(send_order_notifications(order))
+        self.assertEqual(send_mail_mock.call_count, 2)
+        order.refresh_from_db()
+        self.assertTrue(order.customer_email_sent)
+        self.assertTrue(order.admin_email_sent)
+
+    def test_unavailable_items_are_removed_from_cart_sync(self):
+        self.client.post(reverse("kitchen:cart"), json.dumps({
+            "cart": [{"food_item_id": self.food_item.pk, "quantity": 1}],
+        }), content_type="application/json")
+        self.food_item.available = False
+        self.food_item.save(update_fields=["available"])
+
+        response = self.client.post(reverse("kitchen:cart"), json.dumps({
+            "cart": [{"food_item_id": self.food_item.pk, "quantity": 1}],
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["items"], [])
+        self.assertTrue(response.json()["warnings"])
 
     def test_order_item_rejects_variant_from_another_food(self):
         item = OrderItem(order=Order(customer_name="A", mobile="9876543210", address="A"), food_item=self.food_item, variant=self.variant, quantity=1, price=Decimal("50"), subtotal=Decimal("50"))

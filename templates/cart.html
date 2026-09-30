@@ -9,6 +9,7 @@
     <p>Review your dishes and quantities before checkout.</p>
   </div>
   <p class="cart-error" data-cart-error role="alert" hidden></p>
+  {% if cart_warnings %}<p class="cart-error">{{ cart_warnings|join:" " }}</p>{% endif %}
   <form class="cart-csrf-token" aria-hidden="true">{% csrf_token %}</form>
   <div class="cart-layout">
     <div class="cart-items" data-cart-items aria-live="polite">

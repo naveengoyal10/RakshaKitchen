@@ -72,6 +72,7 @@ if (document.querySelector('[data-cart-page]') && !hasStoredBasket) {
         food_item_id: item.food_item_id,
         variant_id: item.variant_id,
         variant_name: item.variant_name,
+        minimum_quantity: item.minimum_quantity,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
@@ -120,16 +121,19 @@ function syncCardQuantities() {
   });
 }
 
-function addCardItem(card) {
+function addCardItem(card, {incrementExisting = true} = {}) {
   const button = card.querySelector('.add-to-cart');
   const variantSelect = card.querySelector('.food-variant');
   const selectedVariant = variantSelect?.selectedOptions[0];
   const variantId = variantSelect?.value ? Number(variantSelect.value) : null;
+  const minimumQuantity = Math.max(1, Number(selectedVariant?.dataset.minimumQuantity || button.dataset.minimumQuantity || 1));
   const variantName = variantSelect?.value ? selectedVariant.textContent.split(' · ')[0] : '';
   const itemKey = getCardItemKey(card);
   const existing = basket.find((item) => item.key === itemKey);
-  if (existing) existing.quantity += 1;
-  else basket.push({key: itemKey, food_item_id: Number(button.dataset.foodItemId), variant_id: variantId, variant_name: variantName, name: button.dataset.itemName, price: selectedVariant?.dataset.variantPrice || button.dataset.itemPrice, quantity: 1});
+  if (existing && incrementExisting) existing.quantity = Math.min(999, Math.max(minimumQuantity, existing.quantity + 1));
+  else if (existing && existing.quantity < minimumQuantity) existing.quantity = minimumQuantity;
+  else if (existing) return;
+  else basket.push({key: itemKey, food_item_id: Number(button.dataset.foodItemId), variant_id: variantId, variant_name: variantName, name: button.dataset.itemName, price: selectedVariant?.dataset.variantPrice || button.dataset.itemPrice, quantity: minimumQuantity, minimum_quantity: minimumQuantity});
   saveBasket();
   renderBasket();
 }
@@ -154,31 +158,42 @@ function updateWhatsAppLink() {
 
 function syncMenuPricing() {
   const pricingUrl = document.body.dataset.menuPricingUrl;
-  if (!pricingUrl || !document.querySelector('.menu-item-action')) return;
+  if (!pricingUrl || !document.querySelector('.add-to-cart')) return;
   fetch(`${pricingUrl}?v=unit-pricing-4`, {cache: 'no-store'})
     .then((response) => response.ok ? response.json() : {})
     .then((pricing) => {
       const itemPricing = pricing.items || {};
       const variantPricing = pricing.variants || {};
-      document.querySelectorAll('.menu-item-action').forEach((action) => {
-        const card = action.closest('[data-food-card]');
-        const itemId = card.querySelector('.add-item')?.dataset.foodItemId;
+      document.querySelectorAll('[data-food-card]').forEach((card) => {
+        const button = card.querySelector('.add-to-cart');
+        const itemId = button?.dataset.foodItemId;
         const item = itemPricing[itemId];
+        if (item && button) button.dataset.minimumQuantity = item.minimum_quantity || 1;
+        card.querySelectorAll('.food-variant option[value]').forEach((option) => {
+          const variant = variantPricing[option.value];
+          if (variant) option.dataset.minimumQuantity = variant.minimum_quantity || 1;
+        });
+        const action = card.querySelector('.menu-item-action');
+        if (!action) return;
         const price = action.querySelector('strong');
         if (!item || !price) return;
         const unitText = formatUnitText(item.unit, item.unit_quantity);
         price.dataset.mainPrice = `₹${item.price} for ${unitText}`;
         price.classList.add('unit-price-display');
         updateSelectedVariantPrice(card, price.dataset.mainPrice);
-          const baseOption = card.querySelector('.food-variant option[value=""]');
-          if (baseOption) baseOption.textContent = `${item.base_option_name || 'Standard'} · ${price.dataset.mainPrice}`;
+        const baseOption = card.querySelector('.food-variant option[value=""]');
+        if (baseOption) {
+          baseOption.dataset.minimumQuantity = item.minimum_quantity || 1;
+          baseOption.textContent = `${item.base_option_name || 'Standard'} · ${price.dataset.mainPrice}${Number(item.minimum_quantity) > 1 ? ` · minimum ${item.minimum_quantity}` : ''}`;
+        }
         card.querySelectorAll('.food-variant option[value]').forEach((option) => {
           const variant = variantPricing[option.value];
           if (!variant) return;
           const variantUnitText = formatUnitText(variant.unit, variant.unit_quantity);
           const variantName = option.textContent.split(' · ')[0];
           option.dataset.displayPrice = `₹${variant.price} for ${variantUnitText}`;
-          option.textContent = `${variantName} · ${option.dataset.displayPrice}`;
+          option.dataset.minimumQuantity = variant.minimum_quantity || 1;
+          option.textContent = `${variantName} · ${option.dataset.displayPrice}${Number(variant.minimum_quantity) > 1 ? ` · minimum ${variant.minimum_quantity}` : ''}`;
         });
       });
     })
@@ -264,7 +279,10 @@ function renderCartPage(snapshot) {
   const summary = document.querySelector('[data-cart-summary]');
   const error = document.querySelector('[data-cart-error]');
   const total = document.querySelector('[data-cart-total]');
-  if (error) error.hidden = true;
+  if (error) {
+    error.textContent = (snapshot.warnings || []).join(' ');
+    error.hidden = !snapshot.warnings?.length;
+  }
   if (summary) summary.hidden = !items.length;
   setCartCheckoutEnabled(items.length > 0);
   if (total) total.textContent = Number(snapshot.total || 0).toFixed(2);
@@ -281,7 +299,7 @@ function renderCartPage(snapshot) {
     const image = item.image_url
       ? `<img src="${escapeHtml(item.image_url)}" alt="${safeName}" loading="lazy">`
       : `<span>${escapeHtml(item.category_name)}</span>`;
-    return `<article class="cart-line" data-cart-line data-cart-key="${key}"><div class="cart-product-image">${image}</div><div class="cart-product-info"><h2>${safeName}${variantName}</h2><p class="cart-unit-price"><span>Price per unit</span>${escapeHtml(item.unit_price_label)}</p><div class="cart-line-actions"><div class="cart-quantity-controls" aria-label="Quantity controls for ${safeName}"><button type="button" data-cart-decrement="${key}" aria-label="Decrease ${safeName} quantity">−</button><output data-cart-quantity="${key}">${item.quantity}</output><button type="button" data-cart-increment="${key}" aria-label="Increase ${safeName} quantity">+</button></div><button class="cart-remove" type="button" data-cart-remove="${key}">Remove</button></div></div><div class="cart-line-subtotal"><span class="cart-line-math">₹${Number(item.price).toFixed(2)} × ${item.quantity}</span><span>Subtotal</span><strong>₹<b data-cart-subtotal="${key}">${Number(item.subtotal).toFixed(2)}</b></strong></div></article>`;
+    return `<article class="cart-line" data-cart-line data-cart-key="${key}"><div class="cart-product-image">${image}</div><div class="cart-product-info"><h2>${safeName}${variantName}</h2><p class="cart-unit-price"><span>Price per unit</span>${escapeHtml(item.unit_price_label)}</p>${Number(item.minimum_quantity) > 1 ? `<p class="cart-minimum">Minimum quantity: ${item.minimum_quantity}</p>` : ''}<div class="cart-line-actions"><div class="cart-quantity-controls" aria-label="Quantity controls for ${safeName}"><button type="button" data-cart-decrement="${key}" aria-label="Decrease ${safeName} quantity" ${item.quantity <= Number(item.minimum_quantity || 1) ? 'disabled' : ''}>−</button><output data-cart-quantity="${key}">${item.quantity}</output><button type="button" data-cart-increment="${key}" aria-label="Increase ${safeName} quantity" ${item.quantity >= 999 ? 'disabled' : ''}>+</button></div><button class="cart-remove" type="button" data-cart-remove="${key}">Remove</button></div></div><div class="cart-line-subtotal"><span class="cart-line-math">₹${Number(item.price).toFixed(2)} × ${item.quantity}</span><span>Subtotal</span><strong>₹<b data-cart-subtotal="${key}">${Number(item.subtotal).toFixed(2)}</b></strong></div></article>`;
   }).join('');
 }
 
@@ -294,7 +312,7 @@ function scheduleServerCartSync() {
 
 async function syncCartWithServer() {
   const cartUrl = document.body.dataset.cartUrl;
-  const csrfToken = document.querySelector('.cart-csrf-token [name="csrfmiddlewaretoken"]')?.value;
+  const csrfToken = document.querySelector('.cart-csrf-token [name="csrfmiddlewaretoken"], [data-order-form] [name="csrfmiddlewaretoken"]')?.value;
   if (!cartUrl || !csrfToken) return;
   setCartCheckoutEnabled(false);
   try {
@@ -310,6 +328,7 @@ async function syncCartWithServer() {
       food_item_id: item.food_item_id,
       variant_id: item.variant_id,
       variant_name: item.variant_name,
+      minimum_quantity: item.minimum_quantity,
       name: item.name,
       price: item.price,
       quantity: item.quantity,
@@ -317,6 +336,11 @@ async function syncCartWithServer() {
     saveBasket(false);
     renderBasket();
     renderCartPage(snapshot);
+    const warning = document.querySelector('[data-cart-error]');
+    if (warning && snapshot.warnings?.length) {
+      warning.textContent = snapshot.warnings.join(' ');
+      warning.hidden = false;
+    }
   } catch (error) {
     const message = document.querySelector('[data-cart-error]');
     if (message) {
@@ -336,7 +360,7 @@ document.addEventListener('click', (event) => {
   }
   const buyButton = event.target.closest('.buy-now');
   if (buyButton) {
-    addCardItem(buyButton.closest('[data-food-card]'));
+    addCardItem(buyButton.closest('[data-food-card]'), {incrementExisting: false});
     window.location.assign(document.body.dataset.cartUrl);
     return;
   }
@@ -347,7 +371,7 @@ document.addEventListener('click', (event) => {
     if (item && cartQuantityButton.hasAttribute('data-cart-remove')) {
       basket = basket.filter((basketItem) => basketItem.key !== key);
     } else if (item) {
-      item.quantity = Math.min(999, Math.max(1, item.quantity + (cartQuantityButton.hasAttribute('data-cart-increment') ? 1 : -1)));
+      item.quantity = Math.min(999, Math.max(Number(item.minimum_quantity || 1), item.quantity + (cartQuantityButton.hasAttribute('data-cart-increment') ? 1 : -1)));
     }
     saveBasket();
     renderBasket();
@@ -373,7 +397,7 @@ document.addEventListener('click', (event) => {
     const itemKey = decodeURIComponent(quantityButton.dataset.incrementItem || quantityButton.dataset.decrementItem);
     const item = basket.find((basketItem) => basketItem.key === itemKey);
     if (item) {
-      item.quantity = Math.min(999, Math.max(1, item.quantity + (quantityButton.dataset.incrementItem ? 1 : -1)));
+      item.quantity = Math.min(999, Math.max(Number(item.minimum_quantity || 1), item.quantity + (quantityButton.dataset.incrementItem ? 1 : -1)));
       saveBasket();
       renderBasket();
     }
@@ -428,4 +452,18 @@ normalizePlateLabels();
 if (document.querySelector('[data-cart-page]')) {
   renderCartPage(JSON.parse(document.querySelector('#server-cart-data')?.textContent || '{"items":[],"total":"0"}'));
   syncCartWithServer();
+} else if (document.querySelector('[data-order-form]')) {
+  syncCartWithServer();
 }
+
+document.querySelector('[data-order-form]')?.addEventListener('submit', (event) => {
+  const submitButtons = document.querySelectorAll('[data-order-form] button[type="submit"], [data-mobile-place-order]');
+  if ([...submitButtons].some((button) => button.disabled)) {
+    event.preventDefault();
+    return;
+  }
+  submitButtons.forEach((button) => {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+  });
+});

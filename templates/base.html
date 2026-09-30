@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="{% static 'css/mobile-fixes.css' %}">
   <link rel="stylesheet" href="{% static 'css/menu-polish.css' %}">
   <link rel="stylesheet" href="{% static 'css/hero-step-one.css' %}">
-  <link rel="stylesheet" href="{% static 'css/mobile-ordering.css' %}?v=mobile-ordering-2">
+  <link rel="stylesheet" href="{% static 'css/mobile-ordering.css' %}?v=mobile-ordering-3">
   {% block extra_meta %}{% endblock %}
 </head>
 <body data-menu-url="{% url 'kitchen:menu' %}" data-cart-url="{% url 'kitchen:cart' %}" data-order-url="{% url 'kitchen:order' %}" data-menu-pricing-url="{% url 'kitchen:menu_pricing' %}" data-whatsapp-number="{{ whatsapp_number }}">
@@ -64,6 +64,6 @@
     "description": "{{ site_settings.tagline|default:'Fresh, home-style Indian food made for sharing.'|escapejs }}",
     "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
   }</script>{% endblock %}
-  <script src="{% static 'js/site.js' %}?v=mobile-cart-2"></script>
+  <script src="{% static 'js/site.js' %}?v=complete-order-1"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from .models import Category, CustomerInquiry, FoodItem, FoodVariant, Order, OrderItem, OrderInquiry, Testimonial, WebsiteSettings
 
@@ -22,13 +22,13 @@ class CategoryAdmin(admin.ModelAdmin):
 class FoodVariantInline(admin.TabularInline):
     model = FoodVariant
     extra = 1
-    fields = ("name", "price", "unit_quantity", "unit", "active", "display_order")
+    fields = ("name", "price", "unit_quantity", "unit", "minimum_quantity", "active", "display_order")
     ordering = ("display_order", "name")
 
 
 @admin.register(FoodVariant)
 class FoodVariantAdmin(admin.ModelAdmin):
-    list_display = ("food_item", "name", "price", "unit_quantity", "unit", "active", "display_order", "created_at", "updated_at")
+    list_display = ("food_item", "name", "price", "unit_quantity", "unit", "minimum_quantity", "active", "display_order", "created_at", "updated_at")
     list_filter = ("active", "food_item__category")
     list_editable = ("active", "display_order")
     search_fields = ("name", "food_item__name")
@@ -39,7 +39,7 @@ class FoodVariantAdmin(admin.ModelAdmin):
 
 @admin.register(FoodItem)
 class FoodItemAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "price", "base_option_name", "unit_quantity", "unit", "vegetarian", "jain_available", "featured", "available", "display_order", "created_at", "updated_at")
+    list_display = ("name", "category", "price", "base_option_name", "unit_quantity", "unit", "minimum_quantity", "vegetarian", "jain_available", "featured", "available", "display_order", "created_at", "updated_at")
     list_filter = ("category", "vegetarian", "jain_available", "featured", "available")
     list_editable = ("featured", "available", "display_order")
     prepopulated_fields = {"slug": ("name",)}
@@ -86,27 +86,43 @@ class CustomerInquiryAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    fields = ("food_item", "variant", "quantity", "price", "subtotal")
-    readonly_fields = ("subtotal",)
+    fields = ("food_item", "variant", "product_name", "variant_name_snapshot", "quantity", "price", "subtotal")
+    readonly_fields = ("product_name", "variant_name_snapshot", "subtotal")
     autocomplete_fields = ("food_item", "variant")
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("order_number", "customer_name", "order_type", "status", "total_amount", "preferred_date", "created_at")
+    list_display = ("order_number", "customer_name", "mobile", "order_type", "status", "total_amount", "preferred_date", "customer_email_sent", "admin_email_sent", "created_at")
     list_filter = ("status", "order_type", "preferred_date")
     search_fields = ("order_number", "customer_name", "mobile", "email", "address")
     ordering = ("-created_at",)
-    readonly_fields = ("order_number", "total_amount", "created_at", "updated_at")
+    readonly_fields = ("order_number", "total_amount", "submission_token", "customer_email_sent", "admin_email_sent", "email_error", "created_at", "updated_at")
     date_hierarchy = "created_at"
     inlines = (OrderItemInline,)
+    actions = ("resend_order_emails",)
     fieldsets = (
-        ("Order", {"fields": ("order_number", "status", "order_type", "total_amount")} ),
-        ("Customer", {"fields": ("customer_name", "mobile", "email", "address")} ),
+        ("Order", {"fields": ("order_number", "status", "order_type", "total_amount", "submission_token")} ),
+        ("Customer", {"fields": ("customer_name", "mobile", "email", "address", "building_society", "flat_number")} ),
         ("Schedule", {"fields": ("preferred_date", "preferred_time")} ),
         ("Notes", {"fields": ("notes",)} ),
+        ("Email delivery", {"fields": ("customer_email_sent", "admin_email_sent", "email_error")} ),
         ("Timestamps", {"fields": ("created_at", "updated_at")} ),
     )
+
+    @admin.action(description="Retry unsent customer/admin order emails")
+    def resend_order_emails(self, request, queryset):
+        from .order_emails import send_order_notifications
+
+        sent = 0
+        for order in queryset.prefetch_related("items__food_item", "items__variant"):
+            if send_order_notifications(order):
+                sent += 1
+        self.message_user(
+            request,
+            f"Email retries completed successfully for {sent} of {queryset.count()} selected order(s). Check each order’s email status for failures.",
+            level=messages.SUCCESS if sent == queryset.count() else messages.WARNING,
+        )
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)

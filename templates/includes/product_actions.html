@@ -1,4 +1,5 @@
 <div class="product-actions">
-  <button class="button add-item add-to-cart" type="button" data-food-item-id="{{ item.id }}" data-item-name="{{ item.name|escapejs }}" data-item-price="{{ item.price }}">Add to Cart</button>
+  {% if item.minimum_quantity > 1 %}<small class="minimum-order-label">Minimum quantity: {{ item.minimum_quantity }}</small>{% endif %}
+  <button class="button add-item add-to-cart" type="button" data-food-item-id="{{ item.id }}" data-item-name="{{ item.name|escapejs }}" data-item-price="{{ item.price }}" data-minimum-quantity="{{ item.minimum_quantity }}">Add to Cart</button>
   <button class="button button-dark buy-now" type="button">Buy Now</button>
 </div>

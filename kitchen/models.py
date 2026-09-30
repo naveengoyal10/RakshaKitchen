@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.validators import MaxValueValidator
 from django.db import models
 
 
@@ -32,6 +33,7 @@ class FoodItem(models.Model):
     base_option_name = models.CharField(max_length=80, default="Standard", help_text="Name shown for the main item option")
     unit_quantity = models.PositiveIntegerField(default=1, help_text="Number of pieces or grams included at this price")
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="piece")
+    minimum_quantity = models.PositiveSmallIntegerField(default=1, validators=[MaxValueValidator(999)], help_text="Minimum number of this item customers must order")
     image = models.ImageField(upload_to="menu/", blank=True)
     vegetarian = models.BooleanField(default=False)
     jain_available = models.BooleanField(default=False)
@@ -46,6 +48,10 @@ class FoodItem(models.Model):
         indexes = [
             models.Index(fields=["category", "available", "display_order"], name="kitchen_item_category_idx"),
             models.Index(fields=["featured", "available"], name="kitchen_item_featured_idx"),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(minimum_quantity__gte=1), name="kitchen_item_min_quantity_gte_one"),
+            models.CheckConstraint(condition=models.Q(minimum_quantity__lte=999), name="kitchen_item_min_quantity_lte_999"),
         ]
 
     def __str__(self):
@@ -85,6 +91,7 @@ class FoodVariant(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     unit_quantity = models.PositiveIntegerField(default=1, help_text="Number of pieces or grams included at this price")
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="piece")
+    minimum_quantity = models.PositiveSmallIntegerField(default=1, validators=[MaxValueValidator(999)], help_text="Minimum number of this size customers must order")
     active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -93,7 +100,11 @@ class FoodVariant(models.Model):
     class Meta:
         ordering = ["display_order", "name"]
         indexes = [models.Index(fields=["food_item", "active", "display_order"], name="kitchen_variant_item_idx")]
-        constraints = [models.CheckConstraint(condition=models.Q(price__gte=0), name="kitchen_variant_price_gte_zero")]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(price__gte=0), name="kitchen_variant_price_gte_zero"),
+            models.CheckConstraint(condition=models.Q(minimum_quantity__gte=1), name="kitchen_variant_min_quantity_gte_one"),
+            models.CheckConstraint(condition=models.Q(minimum_quantity__lte=999), name="kitchen_variant_min_quantity_lte_999"),
+        ]
 
     def __str__(self):
         return f"{self.food_item.name} - {self.name}"
@@ -124,10 +135,11 @@ def generate_order_number():
 class Order(models.Model):
     ORDER_TYPE_CHOICES = [("delivery", "Delivery"), ("pickup", "Pickup"), ("bulk", "Bulk / party")]
     STATUS_CHOICES = [
-        ("new", "New"),
+        ("pending", "Pending"),
         ("confirmed", "Confirmed"),
         ("preparing", "Preparing"),
         ("ready", "Ready"),
+        ("out_for_delivery", "Out for delivery"),
         ("delivered", "Delivered"),
         ("cancelled", "Cancelled"),
     ]
@@ -136,12 +148,18 @@ class Order(models.Model):
     mobile = models.CharField(max_length=30)
     email = models.EmailField(blank=True)
     address = models.TextField()
+    building_society = models.CharField(max_length=180, blank=True)
+    flat_number = models.CharField(max_length=60, blank=True)
     preferred_date = models.DateField(null=True, blank=True)
     preferred_time = models.TimeField(null=True, blank=True)
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES, default="delivery")
     notes = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    submission_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+    customer_email_sent = models.BooleanField(default=False)
+    admin_email_sent = models.BooleanField(default=False)
+    email_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -158,6 +176,8 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     food_item = models.ForeignKey(FoodItem, on_delete=models.PROTECT, related_name="order_items")
     variant = models.ForeignKey(FoodVariant, on_delete=models.PROTECT, related_name="order_items", null=True, blank=True)
+    product_name = models.CharField(max_length=120, blank=True)
+    variant_name_snapshot = models.CharField(max_length=80, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
@@ -180,6 +200,10 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean(exclude=["subtotal"])
         self.subtotal = self.price * self.quantity
+        if not self.product_name and self.food_item_id:
+            self.product_name = self.food_item.name
+        if not self.variant_name_snapshot and self.variant_id:
+            self.variant_name_snapshot = self.variant.name
         super().save(*args, **kwargs)
 
     def __str__(self):

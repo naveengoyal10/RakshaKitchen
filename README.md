@@ -19,6 +19,24 @@ A production-minded Django website for a home-style food business. The storefron
    ```
 4. Visit `http://127.0.0.1:8000/` and manage menu items at `/admin/`.
 
+The storefront cart uses the existing `FoodItem`/`FoodVariant` catalog and Django session, with browser storage as a convenience. Checkout reloads current product/variant prices from the database, checks availability and admin-configured minimum quantities, and stores order-line price/name snapshots. An order is committed before email is attempted; mail failures are recorded and can be retried from the Django Admin Orders list using **Retry unsent customer/admin order emails**.
+
+For local email testing, `DEBUG=True` defaults to `django.core.mail.backends.console.EmailBackend`, which prints messages to the development server console. To test actual delivery, configure the SMTP variables below. Email delivery requires a working SMTP account/provider; without it, the order is still saved and the failed email status is visible in Admin.
+
+New/updated environment variables for checkout mail:
+
+- `ADMIN_ORDER_EMAIL`: destination for new order alerts (required to deliver admin notifications)
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: SMTP server settings
+- `EMAIL_USE_TLS`: use STARTTLS (default `True`)
+- `EMAIL_USE_SSL`: use implicit TLS (default `False`; do not enable together with TLS)
+- `EMAIL_TIMEOUT`: SMTP connection timeout in seconds (default `10`)
+- `DEFAULT_FROM_EMAIL`: verified sender/from address (defaults to `EMAIL_HOST_USER`, then `orders@rakshakitchen.in`)
+- `RAKSHA_PHONE`, `RAKSHA_EMAIL`: business contact shown in receipts (existing storefront variables)
+
+Set SMTP credentials and `ADMIN_ORDER_EMAIL` as environment variables in Vercel Project Settings; do not commit credentials to `.env` or source control. Redeploy after changing environment variables. Configure a valid sender address with the provider. The Vercel build already applies migrations; locally run `py manage.py migrate` before using the updated checkout. To set a product minimum, open its Food Item or Food Variant in Django Admin and set **Minimum quantity** (defaults to 1).
+
+Run checkout and notification tests with `py manage.py test kitchen`. The tests use Django’s in-memory email backend and do not send real mail.
+
 Set `DATABASE_URL` to a PostgreSQL URL in production, for example `postgresql://user:password@host:5432/raksha_kitchen`.
 
 ## Vercel deployment

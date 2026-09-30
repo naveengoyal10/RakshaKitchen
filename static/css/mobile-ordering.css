@@ -29,6 +29,7 @@
   .food-meta{align-items:stretch;display:flex;flex-direction:column;gap:9px}
   .food-meta>strong,.menu-item-action>strong{max-width:100%;white-space:normal}
   .product-actions{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .product-actions .minimum-order-label,.product-actions .dish-quantity-controls{grid-column:1/-1}
   [data-food-card] .add-item{display:inline-flex!important}
   .dish-quantity-controls:not(.has-items){display:none}
   .product-actions .button{font-size:.9rem;line-height:1.25;margin:0;min-height:48px;min-width:0;overflow-wrap:anywhere;padding:10px 8px;white-space:normal;width:100%}
@@ -74,6 +75,9 @@
   .order-submit{margin-top:18px;width:100%}
   .order-submit .button{align-items:center;display:flex;font-size:1rem;justify-content:space-between;margin:0;min-height:56px;min-width:0;padding:15px 18px;width:100%}
   .delivery-order-notice{margin-left:16px;margin-right:16px;max-width:calc(100% - 32px);overflow-wrap:anywhere}
+  .checkout-cart-error{background:#fff0ed;border:1px solid #e2b6ac;color:#7e3025;margin:0 0 12px;padding:11px 13px}
+  .checkout-cart-error[hidden]{display:none}
+  .minimum-order-label,.cart-minimum{color:#76502a;display:block;font-size:.76rem;font-weight:600;line-height:1.4}
   .mobile-cart-bar{align-items:center;background:var(--ink);border:1px solid rgba(255,255,255,.2);border-radius:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);box-shadow:0 10px 30px rgba(20,35,28,.28);color:var(--paper);display:flex;gap:10px;left:12px;margin:0 auto;max-width:560px;min-height:64px;padding:9px 13px;position:fixed;right:12px;z-index:60}
   .mobile-cart-bar[hidden]{display:none}
   .mobile-place-order-bar{align-items:center;background:var(--saffron);border:0;border-radius:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);box-shadow:0 10px 30px rgba(20,35,28,.28);color:#fff;display:none;font:700 .96rem var(--sans);justify-content:space-between;left:12px;margin:0 auto;max-width:560px;min-height:58px;padding:12px 18px;position:fixed;right:12px;z-index:61}

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django import forms
 from django.utils import timezone
 
@@ -43,24 +45,36 @@ class CustomerInquiryForm(forms.ModelForm):
 
 
 class OrderForm(forms.ModelForm):
+    email = forms.EmailField(required=True, label="Email address")
     cart_data = forms.CharField(required=False, max_length=10000, widget=forms.HiddenInput())
+    submission_token = forms.UUIDField(required=True, widget=forms.HiddenInput())
 
     class Meta:
         model = Order
-        fields = ("customer_name", "mobile", "email", "address", "preferred_date", "preferred_time", "order_type", "notes", "cart_data")
+        fields = ("customer_name", "mobile", "email", "address", "building_society", "flat_number", "preferred_date", "preferred_time", "order_type", "notes", "cart_data")
         widgets = {
             "preferred_date": forms.DateInput(attrs={"type": "date"}),
             "preferred_time": forms.TimeInput(attrs={"type": "time"}),
             "notes": forms.Textarea(attrs={"rows": 4}),
         }
         labels = {
-            "customer_name": "Name",
+            "customer_name": "Full name",
             "mobile": "Mobile number",
+            "address": "Street / area",
+            "building_society": "Building / society",
+            "flat_number": "Flat / apartment number",
             "preferred_date": "Preferred date",
             "preferred_time": "Preferred time",
             "order_type": "Delivery or pickup",
             "notes": "Additional instructions",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["building_society"].required = True
+        self.fields["flat_number"].required = True
+        self.fields["preferred_date"].required = True
+        self.fields["preferred_time"].required = True
 
     def clean_mobile(self):
         mobile = self.cleaned_data["mobile"].strip()
@@ -74,6 +88,19 @@ class OrderForm(forms.ModelForm):
         if preferred_date and preferred_date < timezone.localdate():
             raise forms.ValidationError("Preferred date cannot be in the past.")
         return preferred_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        preferred_date = cleaned_data.get("preferred_date")
+        preferred_time = cleaned_data.get("preferred_time")
+        if preferred_date and preferred_time:
+            requested_delivery = timezone.make_aware(
+                datetime.combine(preferred_date, preferred_time),
+                timezone.get_current_timezone(),
+            )
+            if requested_delivery < timezone.now() + timedelta(hours=4):
+                self.add_error("preferred_time", "Orders must be scheduled at least 4 hours in advance.")
+        return cleaned_data
 
 
 class OrderInquiryForm(forms.ModelForm):
